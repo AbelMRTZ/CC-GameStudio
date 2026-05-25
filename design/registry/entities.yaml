@@ -22,147 +22,211 @@
 #             /consistency-check (primary input — grep-first, GDD-second)
 #             /review-all-gdds (Phase 1 — baseline for Phase 2 checks)
 #             /architecture-review (data structure and interface validation)
-#
-# SEARCH PATTERNS (for skills using Grep):
-#   All entity names:        Grep pattern="^  - name:" path="design/registry/entities.yaml"
-#   Specific entity:         Grep pattern="  - name: goblin" path="design/registry/entities.yaml"
-#   All items:               Grep pattern="^  - name:" path="design/registry/entities.yaml" (items section)
-#   What combat.md owns:     Grep pattern="source: design/gdd/combat.md"
-#   What inventory.md uses:  Grep pattern="referenced_by.*inventory"
-#   All gold values:          Grep pattern="value_gold:"
-#   Deprecated entries:      Grep pattern="status: deprecated"
-#
-# FORMAT: YAML. Consistent indentation is critical for grep reliability.
-#   Sections: entities | items | formulas | constants
-#   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: ""
+last_updated: "2026-05-26"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
-# Named game-world objects: enemies, NPCs, characters, factions, bosses.
-# Register an entity here when it appears in more than one GDD — e.g., an
-# enemy defined in combat.md that also drops items listed in inventory.md.
-#
-# Required fields: name, status, source, referenced_by, added
-# Attribute fields: any key stats that could appear in another GDD
-#   (health, damage, drops, faction, etc.)
 
 entities: []
 
-# Example (remove when first real entry is added):
-#
-# entities:
-#   - name: goblin
-#     status: active              # active | deprecated
-#     source: design/gdd/combat.md
-#     referenced_by:
-#       - design/gdd/combat.md
-#       - design/gdd/inventory.md
-#     health: 40
-#     damage: 8
-#     drops:
-#       - item: goblin_arm        # must match an entry in items section
-#         qty: 1
-#         drop_rate: 0.8          # 0.0–1.0
-#     added: 2026-03-26
-#     revised: ""
-
-
 # ─── ITEMS ───────────────────────────────────────────────────────────────────
-# Named collectables, equipment, consumables, crafting materials, currency.
-# Register an item when its name or value appears in more than one GDD.
-#
-# Required fields: name, status, source, referenced_by, added
-# Attribute fields: value_gold, weight, stackable, category, and any stat
-#   modifiers that another system (e.g., economy, crafting) might reference.
 
 items: []
 
-# Example:
-#
-# items:
-#   - name: goblin_arm
-#     status: active
-#     source: design/gdd/combat.md   # drop defined in combat GDD
-#     referenced_by:
-#       - design/gdd/combat.md
-#       - design/gdd/inventory.md    # inventory GDD lists its weight/stack rules
-#       - design/gdd/economy.md      # economy GDD references its sell price
-#     value_gold: 5
-#     weight: 1
-#     stackable: true
-#     category: crafting_material
-#     added: 2026-03-26
-#     revised: ""
-
-
 # ─── FORMULAS ────────────────────────────────────────────────────────────────
-# Named calculations with defined variables and output ranges.
-# Register a formula when its output feeds into another system's input,
-# or when another GDD references it by name.
-#
-# Required fields: name, status, source, referenced_by, variables[],
-#   output_range[min, max], added
-# Optional: expression (the actual formula), notes
 
-formulas: []
+formulas:
+  - name: damage_formula
+    status: active
+    source: design/gdd/salud-daño.md
+    referenced_by:
+      - design/gdd/salud-daño.md
+      - design/gdd/base-datos-demonios.md
+      - design/gdd/combate-tiempo-real.md
+    expression: "round(daño_base × (1 + mod_atacante) × (1 + resistencia_defensiva))"
+    variables:
+      - daño_base      # daño del ataque antes de modificadores
+      - mod_atacante   # suma de modificadores demoníacos del atacante (puede ser 0)
+      - resistencia_defensiva  # delta ∈ [-0.5, +0.5]; negativo = armor, positivo = vulnerabilidad
+    output_range: [1, 999]  # mínimo 1 (edge case E1 en combate-tiempo-real.md)
+    notes: "resistencia_defensiva usa notación delta (no multiplicador directo). Convención: negativo=reduce daño, positivo=amplifica daño."
+    added: "2026-05-24"
+    revised: "2026-05-26"
 
-# Example:
-#
-# formulas:
-#   - name: damage_formula
-#     status: active
-#     source: design/gdd/combat.md
-#     referenced_by:
-#       - design/gdd/combat.md
-#       - design/gdd/progression.md   # progression GDD scales attack variable
-#     variables:
-#       - attack
-#       - defense
-#       - crit_chance
-#       - crit_multiplier
-#     output_range: [0, 999]
-#     expression: "max(0, attack - defense) * (1 + crit_chance * crit_multiplier)"
-#     notes: "Output feeds into health-system damage intake. Min is 0 (armour
-#       can absorb all damage). Max is uncapped in formula but tuning knob
-#       damage_cap in combat.md clamps at 999."
-#     added: 2026-03-26
-#     revised: ""
+  - name: mod_atacante_formula
+    status: active
+    source: design/gdd/combate-tiempo-real.md
+    referenced_by:
+      - design/gdd/combate-tiempo-real.md
+      - design/gdd/base-datos-demonios.md
+    expression: "(∑ demon_modifier_i) × synergy_multiplier"
+    variables:
+      - demon_modifier_i    # modificador del i-ésimo demonio equipado (ej: Fuego=0.20, Arcano=0.25)
+      - synergy_multiplier  # multiplicador de sinergia activa (sin sinergia=1.00)
+    output_range: [0.0, 5.0]  # estimado; tunable
+    notes: "Arcano se suma al pool de demon_modifier_i como cualquier otro demonio. No se aplica aparte."
+    added: "2026-05-26"
+    revised: ""
 
+  - name: knockback_decay_formula
+    status: active
+    source: design/gdd/combate-tiempo-real.md
+    referenced_by:
+      - design/gdd/combate-tiempo-real.md
+    expression: "knockback_velocity_initial × (1.0 - (elapsed_time / IFRAME_DURATION))"
+    variables:
+      - knockback_velocity_initial  # Vector2 inicial del knockback
+      - elapsed_time                # tiempo transcurrido desde HIT_STUN entry
+      - IFRAME_DURATION             # 0.3s (ver constantes)
+    output_range: [0.0, 200.0]  # px/s; decay lineal a 0 en IFRAME_DURATION
+    notes: "Vector separado de velocity del CharacterBody2D. Se suma a velocity en _physics_process."
+    added: "2026-05-26"
+    revised: ""
 
 # ─── CONSTANTS ───────────────────────────────────────────────────────────────
-# Named numerical values referenced across multiple systems.
-# Register a constant when it is defined in one GDD but another GDD must
-# agree with it (e.g., gold carry limit defined in economy but checked in
-# inventory, or base inventory slots defined in inventory but displayed in HUD).
-#
-# Required fields: name, status, source, referenced_by, value, unit, added
 
-constants: []
+constants:
+  - name: hp_base
+    status: active
+    source: design/gdd/salud-daño.md
+    referenced_by:
+      - design/gdd/salud-daño.md
+      - design/gdd/base-datos-demonios.md
+      - design/gdd/sistema-audio.md
+    value: 75
+    unit: HP
+    notes: "HP inicial de Edrick. Modificable por demonios (+/- hp_bonus). Visión reduce a 70 (-5)."
+    added: "2026-05-24"
+    revised: ""
 
-# Example:
-#
-# constants:
-#   - name: gold_carry_limit
-#     status: active
-#     source: design/gdd/economy.md
-#     referenced_by:
-#       - design/gdd/economy.md
-#       - design/gdd/inventory.md   # inventory enforces the carry limit
-#       - design/gdd/ui.md          # HUD displays current gold vs limit
-#     value: 9999
-#     unit: gold
-#     added: 2026-03-26
-#     revised: ""
-#
-#   - name: base_inventory_slots
-#     status: active
-#     source: design/gdd/inventory.md
-#     referenced_by:
-#       - design/gdd/inventory.md
-#       - design/gdd/progression.md  # progression unlocks additional slots
-#     value: 20
-#     unit: slots
-#     added: 2026-03-26
-#     revised: ""
+  - name: resist_cap_min
+    status: active
+    source: design/gdd/salud-daño.md
+    referenced_by:
+      - design/gdd/salud-daño.md
+      - design/gdd/base-datos-demonios.md
+      - design/gdd/combate-tiempo-real.md
+    value: -0.5
+    unit: resistance_delta
+    notes: "Resistencia máxima (50% menos daño). Negativo = armor."
+    added: "2026-05-24"
+    revised: ""
+
+  - name: resist_cap_max
+    status: active
+    source: design/gdd/salud-daño.md
+    referenced_by:
+      - design/gdd/salud-daño.md
+      - design/gdd/base-datos-demonios.md
+      - design/gdd/combate-tiempo-real.md
+    value: 0.5
+    unit: resistance_delta
+    notes: "Vulnerabilidad máxima (50% más daño). Positivo = debilidad."
+    added: "2026-05-24"
+    revised: ""
+
+  - name: max_speed
+    status: active
+    source: design/gdd/movimiento-fisicas-2d.md
+    referenced_by:
+      - design/gdd/movimiento-fisicas-2d.md
+      - design/gdd/base-datos-demonios.md
+    value: 250
+    unit: px/s
+    notes: "Velocidad base de movimiento horizontal. Modificable por demonios vía multiplicador."
+    added: "2026-05-24"
+    revised: ""
+
+  - name: dash_speed
+    status: active
+    source: design/gdd/movimiento-fisicas-2d.md
+    referenced_by:
+      - design/gdd/movimiento-fisicas-2d.md
+      - design/gdd/combate-tiempo-real.md
+    value: 400
+    unit: px/s
+    notes: "Velocidad del dash-attack. Sinergia Arcano+Dash añade +25% (500 px/s)."
+    added: "2026-05-24"
+    revised: ""
+
+  - name: dash_duration
+    status: active
+    source: design/gdd/movimiento-fisicas-2d.md
+    referenced_by:
+      - design/gdd/movimiento-fisicas-2d.md
+      - design/gdd/combate-tiempo-real.md
+    value: 0.15
+    unit: seconds
+    notes: "Duración del estado DASH. Gravedad no aplica durante el dash."
+    added: "2026-05-24"
+    revised: ""
+
+  - name: dash_cooldown
+    status: active
+    source: design/gdd/movimiento-fisicas-2d.md
+    referenced_by:
+      - design/gdd/movimiento-fisicas-2d.md
+      - design/gdd/combate-tiempo-real.md
+    value: 0.6
+    unit: seconds
+    notes: "Cooldown del dash. Sinergia Arcano+Dash reduce a 0.5s (-0.1s)."
+    added: "2026-05-24"
+    revised: ""
+
+  - name: IFRAME_DURATION
+    status: active
+    source: design/gdd/combate-tiempo-real.md
+    referenced_by:
+      - design/gdd/combate-tiempo-real.md
+    value: 0.3
+    unit: seconds
+    notes: "Duración de I-frames tras recibir un golpe. También define la duración del knockback decay."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: light_attack_damage
+    status: active
+    source: design/gdd/combate-tiempo-real.md
+    referenced_by:
+      - design/gdd/combate-tiempo-real.md
+    value: 10
+    unit: HP
+    notes: "Daño base del Ataque Ligero sin modificadores."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: heavy_attack_damage
+    status: active
+    source: design/gdd/combate-tiempo-real.md
+    referenced_by:
+      - design/gdd/combate-tiempo-real.md
+    value: 22
+    unit: HP
+    notes: "Daño base del Ataque Pesado sin modificadores."
+    added: "2026-05-26"
+    revised: ""
+
+# ─── SIGNALS (cross-system interfaces) ───────────────────────────────────────
+# Registrar señales cuya firma debe ser consistente en emisor y receptor.
+# No es una sección oficial del schema, pero permite grep-first de firmas.
+
+# hit_landed(target: Node, attack_data: Dictionary)
+#   source: design/gdd/combate-tiempo-real.md
+#   referenced_by: design/gdd/sistema-audio.md (lee attack_data.daño_final)
+#   added: 2026-05-26
+
+# edrick_died()
+#   source: design/gdd/salud-daño.md
+#   referenced_by: design/gdd/combate-tiempo-real.md
+#   added: 2026-05-26
+
+# corruption_damaged(amount: float)
+#   source: design/gdd/combate-tiempo-real.md
+#   referenced_by: design/gdd/estado-del-mundo.md (pendiente documentar)
+#   added: 2026-05-26
+
+# health_changed(nuevo_hp, daño_recibido, tipo_daño)
+#   source: design/gdd/salud-daño.md
+#   referenced_by: HUD de Combate (GDD pendiente)
+#   added: 2026-05-26

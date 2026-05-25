@@ -101,7 +101,7 @@ Al recibir daño:
 | DEAD | HP ≤ 0 | → (sistema narrativo/checkpoint toma control) |
 
 Reglas adicionales:
-- DEAD es un estado terminal desde combate — el sistema de Salud y Daño emite `player_died` y el sistema narrativo maneja la transición (cutscene + checkpoint).
+- DEAD es un estado terminal desde combate — el sistema de Salud y Daño emite `edrick_died` y el sistema narrativo maneja la transición (cutscene + checkpoint).
 - No hay cancels entre ataques en MVP (sin "combo" input que cancele recovery).
 - HIT_STUN no puede ser interrumpido por ningún input del jugador; solo expira por tiempo.
 
@@ -114,7 +114,7 @@ Reglas adicionales:
 | Movimiento y Físicas 2D | Bidireccional | Combate lee `velocity` para habilidades con movimiento (Dash); escribe `velocity` para knockback |
 | Salud y Daño | Salida | Combate llama a `apply_damage(target, daño_base, tipo, mod_atacante)` |
 | Base de Datos de Demonios | Entrada | Combate lee `cooldown`, `damage_modifier`, `ability_type`, `knockback_magnitude` por demonio |
-| Estado del Mundo | Salida | Ataques con Corrupción y ciertas muertes de enemigos pueden llamar a `apply_corruption_delta()` |
+| Estado del Mundo | Salida | Combate emite señal `corruption_damaged(amount)` si habilidades causan Corrupción; Estado del Mundo la escucha y actualiza `corruption_level` |
 | IA de Enemigos (downstream) | Entrada | IA lee el estado de combate del jugador para tomar decisiones (p.ej. atacar durante recovery) |
 | HUD de Combate (downstream) | Salida | Combate emite señales `cooldown_changed(slot, value)`, `hit_stun_started`, `i_frames_active` |
 
@@ -232,7 +232,7 @@ Si el jugador presiona Ataque Ligero mientras Edrick está en knockback:
 **E7: Daño de tipo Corrupción y delta_corruption**
 
 Si un ataque inflige daño Corrupción:
-- Además del daño normal, el sistema de Estado del Mundo recibe `apply_corruption_delta(+0.XX)`
+- Además del daño normal, Combate emite señal `corruption_damaged(amount)` que Estado del Mundo escucha para actualizar `corruption_level`
 - El ataque melee base NO causa corrupción (solo es Físico)
 - Solo ciertas habilidades demoníacas pueden causar Corrupción (definidas en Base de Datos de Demonios)
 
@@ -249,7 +249,7 @@ Si un enemigo tiene -0.7 resistencia a Fuego pero la fórmula sólo permite cap 
 | **Movimiento y Físicas 2D** (GDD #1) | Entrada | Valores de dash (400 px/s, 0.15s, 0.6s cooldown) · control de `velocity` para knockback |
 | **Salud y Daño** (GDD #2) | Entrada/Salida | Fórmula daño_final · HP ranges · resistencia schema |
 | **Base de Datos de Demonios** (GDD #3) | Entrada | damage_modifier por demonio · cooldown values · sinergia multipliers · ability definitions |
-| **Estado del Mundo** (GDD #4) | Salida | Emite `apply_corruption_delta()` si habilidades causan Corrupción |
+| **Estado del Mundo** (GDD #4) | Salida | Emite señal `corruption_damaged(amount)` si habilidades causan Corrupción |
 | **Sistema de Audio** (GDD #5) | Bidireccional | Audio emite eventos: `hit_landed` → sonido impacto · `i_frames_started` → efecto visual · Combate lee volumen/pan/modifiers de demonios activos |
 
 **Dependientes (GDDs que dependen de este):**
@@ -426,5 +426,5 @@ Ejemplo: si pones 0.75x, todas las habilidades se enfríen 25% más rápido.
 **H10: Estados Finales**
 
 - CA-055: Si HP del jugador ≤ 0, entra en estado DEAD
-- CA-056: En DEAD, el sistema de Salud y Daño emite señal `player_died`
+- CA-056: En DEAD, el sistema de Salud y Daño emite señal `edrick_died`
 - CA-057: No se permiten más acciones de combate en DEAD (sistema narrativo toma control)
