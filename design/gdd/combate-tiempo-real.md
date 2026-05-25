@@ -114,7 +114,7 @@ Reglas adicionales:
 | Movimiento y Físicas 2D | Bidireccional | Combate lee `velocity` para habilidades con movimiento (Dash); escribe `velocity` para knockback |
 | Salud y Daño | Salida | Combate llama a `apply_damage(target, daño_base, tipo, mod_atacante)` |
 | Base de Datos de Demonios | Entrada | Combate lee `cooldown`, `damage_modifier`, `ability_type`, `knockback_magnitude` por demonio |
-| Estado del Mundo | Salida | Combate emite señal `corruption_damaged(amount)` si habilidades causan Corrupción; Estado del Mundo la escucha y actualiza `corruption_level` |
+| Estado del Mundo | Salida | Combate emite señal `corruption_passive_tick(amount_per_minute)` cada 60s en combate activo (suma de tiers de demonios equipados desde GDD #3 §4.3); Estado del Mundo escucha y aplica a `corruption_level` con `corruption_floor` mínimo |
 | IA de Enemigos (downstream) | Entrada | IA lee el estado de combate del jugador para tomar decisiones (p.ej. atacar durante recovery) |
 | HUD de Combate (downstream) | Salida | Combate emite señales `cooldown_changed(slot, value)`, `hit_stun_started`, `i_frames_active` |
 
@@ -229,12 +229,17 @@ Si el jugador presiona Ataque Ligero mientras Edrick está en knockback:
 - Input se ignora (en HIT_STUN no hay acciones permitidas)
 - El input NO se cola (el jugador debe esperar a recuperarse)
 
-**E7: Daño de tipo Corrupción y delta_corruption**
+**E7: Corrupción Pasiva por Demonios Equipados** (revisado cross-review 2026-05-26)
 
-Si un ataque inflige daño Corrupción:
-- Además del daño normal, Combate emite señal `corruption_damaged(amount)` que Estado del Mundo escucha para actualizar `corruption_level`
-- El ataque melee base NO causa corrupción (solo es Físico)
-- Solo ciertas habilidades demoníacas pueden causar Corrupción (definidas en Base de Datos de Demonios)
+La corrupción NO se genera por habilidades específicas, sino por mantener demonios equipados en combate activo:
+
+- Combate detecta cuándo Edrick está en **"estado de combate activo"**: cualquier estado distinto a IDLE estable en exploración tranquila. Específicamente: LIGHT_ATTACK, HEAVY_ATTACK, DEMON_ABILITY, HIT_STUN, o IDLE inmediatamente tras combate (timer de "última acción de combate < 5s").
+- Cada 60 segundos en estado de combate activo, Combate calcula el total de tiers de los demonios equipados (tabla en GDD #3 §4.3) y emite señal `corruption_passive_tick(amount_per_minute)` al Estado del Mundo.
+- Estado del Mundo aplica el delta a `corruption_level` (clamp con `corruption_floor` mínimo, ver GDD #4 §4.1.B).
+
+**Por qué este modelo**: Cumple Pilar 5 (Transformación Moral) al hacer la corrupción una consecuencia constante de blandir poder demoníaco en violencia, no un coste excepcional. Sin habilidades específicas marcadas con tipo "Corrupción" en MVP.
+
+**Ejemplo**: Loadout {Arcano, Fuego, Dash} con tiers S+A+A = 0.005+0.003+0.003 = 0.011/min. Después de 30 min combate activo: +0.33 corrupción.
 
 **E8: Resistencia más negativa que -0.5**
 
@@ -249,7 +254,7 @@ Si un enemigo tiene -0.7 resistencia a Fuego pero la fórmula sólo permite cap 
 | **Movimiento y Físicas 2D** (GDD #1) | Entrada | Valores de dash (400 px/s, 0.15s, 0.6s cooldown) · control de `velocity` para knockback |
 | **Salud y Daño** (GDD #2) | Entrada/Salida | Fórmula daño_final · HP ranges · resistencia schema |
 | **Base de Datos de Demonios** (GDD #3) | Entrada | damage_modifier por demonio · cooldown values · sinergia multipliers · ability definitions |
-| **Estado del Mundo** (GDD #4) | Salida | Emite señal `corruption_damaged(amount)` si habilidades causan Corrupción |
+| **Estado del Mundo** (GDD #4) | Salida | Emite señal `corruption_passive_tick(amount_per_minute)` cada 60s en combate activo. Lee tabla de tiers de demonios desde GDD #3 §4.3 |
 | **Sistema de Audio** (GDD #5) | Bidireccional | Audio emite eventos: `hit_landed` → sonido impacto · `i_frames_started` → efecto visual · Combate lee volumen/pan/modifiers de demonios activos |
 
 **Dependientes (GDDs que dependen de este):**
@@ -420,8 +425,9 @@ Ejemplo: si pones 0.75x, todas las habilidades se enfríen 25% más rápido.
 
 **H9: Integración con Estado del Mundo**
 
-- CA-053: Si una habilidad aplica daño de tipo Corrupción, se emite señal `corruption_damaged(amount)` a Estado del Mundo
-- CA-054: Ataques melee base (Ligero/Pesado) nunca emiten `corruption_damaged` (solo demonios específicos)
+- CA-053: Cada 60 segundos en combate activo, Combate emite `corruption_passive_tick(amount_per_minute)` con `amount = ∑ tier_value_i` para cada demonio en `equipped_demons` (tabla GDD #3 §4.3). Assert: a los 60s con loadout {Arcano, Fuego, Dash}, signal emitida con `amount = 0.011`
+- CA-054: Si `equipped_demons` no contiene demonios mecánicos (solo Gato), `corruption_passive_tick` se emite con `amount = 0.0` o no se emite (decisión: NO se emite si amount == 0 para ahorrar señales)
+- CA-054b: El timer de "combate activo" se reinicia cuando Edrick está IDLE en exploración tranquila >5 segundos. Tras ese reinicio, el siguiente tick se programa para 60s después de la próxima acción de combate
 
 **H10: Estados Finales**
 

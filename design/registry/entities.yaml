@@ -207,6 +207,77 @@ constants:
     added: "2026-05-26"
     revised: ""
 
+  - name: CORRUPTION_DECAY_RATE
+    status: active
+    source: design/gdd/estado-del-mundo.md
+    referenced_by:
+      - design/gdd/estado-del-mundo.md
+    value: 0.0005
+    unit: corruption_per_minute
+    notes: "Tasa a la que corruption_level decae cuando NO está en combate activo Y corruption_level > corruption_floor. 22× más lenta que la ganancia máxima con Tier S (Arcano)."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: corruption_tier_S
+    status: active
+    source: design/gdd/base-datos-demonios.md
+    referenced_by:
+      - design/gdd/base-datos-demonios.md
+      - design/gdd/combate-tiempo-real.md
+      - design/gdd/estado-del-mundo.md
+    value: 0.005
+    unit: corruption_per_minute_in_combat
+    notes: "Ganancia de corrupción pasiva por minuto en combate por demonio Tier S equipado. Demonios MVP: Arcano."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: corruption_tier_A
+    status: active
+    source: design/gdd/base-datos-demonios.md
+    referenced_by:
+      - design/gdd/base-datos-demonios.md
+      - design/gdd/combate-tiempo-real.md
+    value: 0.003
+    unit: corruption_per_minute_in_combat
+    notes: "Tier A: Fuego, Dash."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: corruption_tier_B
+    status: active
+    source: design/gdd/base-datos-demonios.md
+    referenced_by:
+      - design/gdd/base-datos-demonios.md
+      - design/gdd/combate-tiempo-real.md
+    value: 0.002
+    unit: corruption_per_minute_in_combat
+    notes: "Tier B: Hielo, Mente."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: corruption_tier_C
+    status: active
+    source: design/gdd/base-datos-demonios.md
+    referenced_by:
+      - design/gdd/base-datos-demonios.md
+      - design/gdd/combate-tiempo-real.md
+    value: 0.001
+    unit: corruption_per_minute_in_combat
+    notes: "Tier C: Visión (ya tiene HP penalty)."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: corruption_floor_per_dark_act
+    status: active
+    source: design/gdd/estado-del-mundo.md
+    referenced_by:
+      - design/gdd/estado-del-mundo.md
+    value: 0.02
+    unit: floor_increment_per_act
+    notes: "Cada acto narrativo oscuro (matar NPC, abandonar aliado) sube el corruption_floor permanente. Resuelve D-W6 (corrupción min-maxable)."
+    added: "2026-05-26"
+    revised: ""
+
 # ─── SIGNALS (cross-system interfaces) ───────────────────────────────────────
 # Registrar señales cuya firma debe ser consistente en emisor y receptor.
 # No es una sección oficial del schema, pero permite grep-first de firmas.
@@ -221,10 +292,14 @@ constants:
 #   referenced_by: design/gdd/combate-tiempo-real.md
 #   added: 2026-05-26
 
-# corruption_damaged(amount: float)
+# corruption_passive_tick(amount_per_minute: float)
 #   source: design/gdd/combate-tiempo-real.md
-#   referenced_by: design/gdd/estado-del-mundo.md (pendiente documentar)
+#   referenced_by: design/gdd/estado-del-mundo.md (§4.1.B + §6.1 item 9)
 #   added: 2026-05-26
+#   notes: Sustituye al ya-deprecated corruption_damaged tras cross-review B2.
+#          Emitida cada 60s en combate activo; amount = suma de tiers de equipped_demons (GDD #3 §4.3)
+#
+# DEPRECATED: corruption_damaged(amount: float) — reemplazada por corruption_passive_tick (2026-05-26)
 
 # health_changed(nuevo_hp, daño_recibido, tipo_daño)
 #   source: design/gdd/salud-daño.md
