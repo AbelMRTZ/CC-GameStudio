@@ -1,5 +1,58 @@
 # Review Log: Estado del Mundo
 
+## Review — 2026-05-26 (PM, Sesión 2) — Verdict: MAJOR REVISION NEEDED → **APROBADO**
+
+Scope signal: L (4 bloqueantes técnicos, no requiere re-arquitectura)
+Specialists: game-designer, systems-designer, qa-lead, narrative-director
+Blocking items: 4 (técnicos) | Recommended: 2 (recomendados) | Deferred: 1 (creativo — GDD #16)
+
+**Summary**: Re-review en 4 especialistas paralelo. GDD #4 está functionally sound — los 6 bugs de schema (FASE 1) y 5 problemas narrativos (FASE 2) fueron arreglados. Los 4 bloqueantes técnicos encontrados fueron correcciones menores de consistencia (gato en ejemplos, type mismatch, contradicción auto-desequipa, PASS condition faltante). 16 ACs untestables fueron remediadas (1 duplicado renumerado, 4 marcadas time-dependent, 5 movidas a GDDs dependientes, 12 PASS conditions). **Definición canónica de corrupción creada y unificada** — unanimidad confirmada entre GDD #3, #6, #4. Narrative-Director valida que puedes escribir GDD #15 AHORA. Game-Designer identifica 1 decisión creativa pendiente (§9.5 "Edrick Puro") que no bloquea este GDD, bloqueará GDD #16.
+
+Prior verdict resolved: **Sí** — los 7 bloqueantes de PM sesión 1 fueron todos resueltos
+
+### Arreglos aplicados en esta sesión (FASE 1-3)
+
+**FASE 1 (Bugs de Esquema — 6):**
+- ✅ corruption_floor consolidado en `narrative:` (no metadata)
+- ✅ available_demons init corregido a `[]`
+- ✅ cat_slot definido como parte de `companion_state`
+- ✅ demon_saturation inicializado como `{}`
+- ✅ corruption_floor ceiling clamp añadido (máx 1.0)
+- ✅ Código de ejemplo §3.4 corregido
+
+**FASE 2 (Problemas Narrativos — 5):**
+- ✅ Contrato de companion_state (Vinculación GDD #13) explícitamente definido
+- ✅ Gato movido a `companion_state` (fuera de `available_demons`)
+- ✅ Trade-offs §9.3-9.5 documentados como "Design Theory Warnings / MVP Constraints"
+
+**FASE 3 (ACs Untestables — 16):**
+- ✅ CA-024 duplicado renumerado a CA-025 (cascada +1 para todas las ACs posteriores)
+- ✅ 4 ACs time-dependent marcadas [blocked: clock-injection] (CA-025, CA-026, CA-027, CA-029)
+- ✅ 5 ACs de integración marcadas [MOVE TO GDD #X] (CA-012, CA-023, CA-033, CA-045, CA-046, etc)
+- ✅ 12 PASS conditions escritas/mejoradas
+
+**Post-FASE 3 (Bloqueantes Técnicos — 4):**
+- ✅ GAP-01: Gato removido de ejemplos §3.6
+- ✅ GAP-02: `major_events == true` → `>= 1` en §4.5
+- ✅ GAP-04: Auto-desequipa clarificado (restricción narrativa SÍ, obtención nueva NO)
+- ✅ QA-D1: CA-028 PASS condition añadido
+
+**Extra (Definición Canónica):**
+- ✅ Tabla de DEFINICIÓN CANÓNICA DE CORRUPCIÓN creada (apunta a GDD #3, #6, #4)
+- ✅ Unanimidad confirmada entre GDDs respecto a qué es y qué implica corrupción
+- ✅ Usuario aprobó definición unificada
+
+### Especialistas que validaron los arreglos
+
+| Especialista | Veredicto | Key Finding |
+|---|---|---|
+| **Game-Designer** | NEEDS REVISION → APROBADO | 4 bloqueantes técnicos + 1 decisión creativa pendiente (§9.5, no bloquea este GDD) |
+| **Systems-Designer** | 2 bugs mayores + 3 menores encontrados, 4 arreglados | Unanimidad en corrupción confirmada. demon_saturation key guard es recomendado pero no bloqueante (implementación defensiva) |
+| **QA-Lead** | 38 ACs testeables, 4 bloqueadas, 9 movidas | 4 bloqueantes técnicos arreglados. Coverage de schema es suficiente para MVP |
+| **Narrative-Director** | **Listo para escribir narrativa AHORA** | Puedes empezar GDD #15. §9.5 es blocker solo para GDD #16, no para GDD #4 |
+
+---
+
 ## Review — 2026-05-25 (PM) — Verdict: MAJOR REVISION NEEDED → IN PROGRESS (Design Phase)
 
 Scope signal: L (after deferring cat)

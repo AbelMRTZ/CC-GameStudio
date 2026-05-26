@@ -23,7 +23,7 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 | 4 | Estado del Mundo | Core | MVP | Aprobado | [estado-del-mundo.md](estado-del-mundo.md) | — |
 | 5 | Sistema de Audio | Audio | MVP | Aprobado | [sistema-audio.md](sistema-audio.md) | — |
 | 6 | Combate en Tiempo Real | Gameplay | MVP | Aprobado | [combate-tiempo-real.md](combate-tiempo-real.md) | Movimiento, Salud/Daño, Base de Datos de Demonios |
-| 7 | IA de Enemigos (inferred) | Gameplay | MVP | No Iniciado | — | Movimiento, Salud/Daño |
+| 7 | IA de Enemigos (inferred) | Gameplay | MVP | Aprobado | [ia-enemigos.md](ia-enemigos.md) | Movimiento, Salud/Daño |
 | 8 | Exploración del Mundo | Gameplay | MVP | No Iniciado | — | Movimiento |
 | 9 | Cámara (inferred) | Core | MVP | No Iniciado | — | Movimiento, Exploración |
 | 10 | Loadout & Build Management | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios |
@@ -175,10 +175,10 @@ Ninguna detectada. El grafo de dependencias es un DAG (Directed Acyclic Graph) l
 | Métrica | Cantidad |
 |---------|----------|
 | Total sistemas identificados | 26 |
-| GDDs iniciados | 6 |
+| GDDs iniciados | 7 |
 | GDDs en revisión | 0 |
-| GDDs aprobados | 6 |
-| Sistemas MVP diseñados | 6 / 21 |
+| GDDs aprobados | 7 |
+| Sistemas MVP diseñados | 7 / 21 |
 | Sistemas Vertical Slice diseñados | 0 / 3 |
 | Sistemas Alpha diseñados | 0 / 1 |
 | Sistemas Full Vision diseñados | 0 / 1 |

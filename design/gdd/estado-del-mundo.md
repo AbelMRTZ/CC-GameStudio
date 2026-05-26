@@ -59,6 +59,8 @@ world_state:
     available_demons: list[string] (ids de TODOS los demonios que el jugador ha obtenido en algún momento narrativo, ej: ["fuego", "hielo", "arcano", "visión", "mente", "dash"]. Este es histórico — nunca decrece.)
     demon_saturation: dict[string, float] (saturación visual acumulada por demonio, rango 0.0-1.0 — se congela cuando se desactiva del loadout)
   
+  companion_state: dict (estado del compañero permanente — será definido completamente por Vinculación GDD #13. Incluirá: bonding_status, relationship_history, abilities, etc. Inicialmente vacío {}; poblado cuando el gato es encontrado narrativamente.)
+  
   narrative:
     corruption_level: float (rango 0.0-1.0; ver §4.1 para 3 fuentes de cambio y §4.1.E para mapeo visual de 5 estados)
     corruption_floor: float (rango 0.0-1.0, monotónicamente creciente — mínimo permanente al que corruption_level puede decaer. Sube con actos narrativos oscuros. Ver §4.1.D)
@@ -84,6 +86,7 @@ Cuando comienza un nuevo juego:
 1. Se crea una estructura de Estado del Mundo con todos los valores iniciales
 2. `equipped_demons` = [] (VACÍO — Edrick no tiene demonios en el loadout aún)
 3. `available_demons` = [] (vacío — Edrick no ha obtenido demonios aún)
+3b. `demon_saturation` = {} (diccionario vacío; se poblará con entradas cuando demonios se equipes)
 4. `current_kingdom` = "reino_1" (comienza en el reino 1)
 5. `corruption_level` = 0.0 (sin corrupción)
 5b. `corruption_floor` = 0.0 (sin actos oscuros previos — floor irrecuperable inicial en cero)
@@ -103,10 +106,11 @@ Cuando comienza un nuevo juego:
    - El jugador puede optar por NO equiparlo y dejar espacio para un demonio futuro
 
 **Ejemplos**:
-- Demonio Fuego obtenido → `available_demons = ["gato", "fuego"]`, `equipped_demons` sigue igual (jugador decide después)
+- Demonio Fuego obtenido → `available_demons = ["fuego"]`, `equipped_demons` sigue igual (jugador decide después)
 - Jugador equipa Fuego → `equipped_demons = ["fuego"]`
-- Demonio Hielo obtenido → `available_demons = ["gato", "fuego", "hielo"]`, puede equipar sin desequipar porque hay espacio
-- Demonio Arcano obtenido → `available_demons = ["gato", "fuego", "hielo", "arcano"]`, pero loadout está lleno (5 demonios) → jugador debe desequipar algo para equipar Arcano, O dejarlo sin equipar
+- Demonio Hielo obtenido → `available_demons = ["fuego", "hielo"]`, puede equipar sin desequipar porque hay espacio
+- Demonio Arcano obtenido → `available_demons = ["fuego", "hielo", "arcano"]`, pero loadout está lleno (5 demonios) → jugador debe desequipar algo para equipar Arcano, O dejarlo sin equipar
+- *Nota: El Gato vive en `companion_state` separado, no en `available_demons`*
 
 ### 3.3 Actualización de Estado
 
@@ -178,7 +182,7 @@ Sino si world_state.major_events.get("cat_reveal", 0) >= 1:
 
 **Ejemplo B — Restricción de Área**:
 ```
-Si world_state.player_choices["ejecutar_lord_X"] == "ejecutado":
+Si world_state.player_choices.has("ejecutar_lord_X") and world_state.player_choices["ejecutar_lord_X"]["value"] == "ejecutado":
   // Si ejecutaste al lord, los guardias de su castillo son hostiles
   enemies_in_area = "hostiles"
 Sino:
@@ -234,9 +238,9 @@ world_state.record_event(
 Jugador en Reino 1, Acto 1, obtiene Fuego en encuentro narrativo. Después obtiene Hielo. Más tarde obtiene Arcano pero decide NO equiparlo todavía.
 
 **Qué sucede**:
-1. Al obtener Fuego: `available_demons = ["gato", "fuego"]`. Jugador equipa Fuego inmediatamente → `equipped_demons = ["fuego"]`
-2. Al obtener Hielo: `available_demons = ["gato", "fuego", "hielo"]`. Jugador equipa Hielo → `equipped_demons = ["fuego", "hielo"]`
-3. Al obtener Arcano: `available_demons = ["gato", "fuego", "hielo", "arcano"]`. Jugador decide NO equiparlo aún porque quiere mantener solo Fuego + Hielo → `equipped_demons = ["fuego", "hielo"]` (Arcano está disponible pero no equipado)
+1. Al obtener Fuego: `available_demons = ["fuego"]`. Jugador equipa Fuego inmediatamente → `equipped_demons = ["fuego"]`. El Gato vive en `companion_state` (definido por GDD #13), no en `available_demons`.
+2. Al obtener Hielo: `available_demons = ["fuego", "hielo"]`. Jugador equipa Hielo → `equipped_demons = ["fuego", "hielo"]`
+3. Al obtener Arcano: `available_demons = ["fuego", "hielo", "arcano"]`. Jugador decide NO equiparlo aún porque quiere mantener solo Fuego + Hielo → `equipped_demons = ["fuego", "hielo"]` (Arcano está disponible pero no equipado)
 4. Más tarde, jugador abre Loadout UI y decide: "Equipo Arcano, desequipo Hielo" → `equipped_demons = ["fuego", "arcano"]`
 5. El Gato siempre está activo independientemente del loadout (no toma slot)
 
@@ -246,7 +250,7 @@ Jugador en Reino 1, Acto 1, obtiene Fuego en encuentro narrativo. Después obtie
 Jugador obtiene Fuego, ejecuta a un NPC bandido. Guarda, cierra el juego, y carga.
 
 **Qué sucede**:
-1. Al cargar, el Estado carga todas las persistencias: `available_demons = ["gato", "fuego", "hielo"]`, `equipped_demons = ["fuego"]`, `corruption_level = 0.15`, `player_choices["ejecutar_bandido_x"] = {"value": "ejecutado", "act": 1, "timestamp": 12345.0, "conscious": true}`
+1. Al cargar, el Estado carga todas las persistencias: `available_demons = ["fuego", "hielo"]`, `equipped_demons = ["fuego"]`, `companion_state = {...}` (Gato), `corruption_level = 0.15`, `player_choices["ejecutar_bandido_x"] = {"value": "ejecutado", "act": 1, "timestamp": 12345.0, "conscious": true}`
 2. Edrick aparece visualmente con saturación de Fuego (aura moderada) + corrupción visual leve (aura gris suave combinada)
 3. El bandido (si estuviera en el mismo área) estaría muerto (su enemigo no reaparece)
 4. Dialogues de otros NPCs que conocen al bandido tienen variaciones: "Oí que ejecutaste a Grax. Eres más oscuro de lo que pensé."
@@ -256,6 +260,29 @@ Jugador obtiene Fuego, ejecuta a un NPC bandido. Guarda, cierra el juego, y carg
 ---
 
 ## 4. Fórmulas
+
+---
+
+### 📌 DEFINICIÓN CANÓNICA DE CORRUPCIÓN
+
+**⚠️ CRÍTICO**: La corrupción es un eje que atraviesa múltiples GDDs. Estas son las definiciones autoritativas:
+
+| Aspecto | Definición Canónica | GDD Responsable |
+|---------|-------------------|-----------------|
+| **Tier values** de demonios (cómo generan corrupción pasiva) | Tabla en GDD #3 §4.3 (Base de Datos de Demonios) | GDD #3 |
+| **Señal de corrupción pasiva** emitida en combate | Fórmula en GDD #6 §3 (Combate en Tiempo Real) — cada 60s emite `corruption_passive_tick(amount)` | GDD #6 |
+| **Acumulación y decay** de `corruption_level` | Fórmulas §4.1 AQUÍ (Estado del Mundo) — clamping, floor, decay | GDD #4 |
+| **Efectos visuales** (sprite, aura) de corrupción | Tabla de umbrales en GDD #14 §3 (Transformación Visual de Edrick) | GDD #14 |
+| **Acciones narrativas** que modifican corrupción | Deltas definidos en GDD #22 (Seguimiento Moral) | GDD #22 |
+| **Interacción** entre corrupción y reputación de NPC | Patrones de autoria en GDD #15 (NPC y Diálogo) | GDD #15 |
+
+**Regla de consistencia**: Si encuentras inconsistencia entre estas definiciones, la prioridad es:
+1. GDD #3 (definición de demonios) es fuente de verdad para tiers
+2. GDD #6 (combate) es fuente de verdad para la señal/trigger
+3. GDD #4 (este documento) es fuente de verdad para la acumulación
+4. Los demás GDDs la *consultan* pero no la redefinan
+
+---
 
 ### 4.1 Cambio de Corrupción Moral
 
@@ -319,13 +346,14 @@ Donde `CORRUPTION_DECAY_RATE = 0.0005` por minuto.
 **Decisión cross-review D-W6 + B2 (2026-05-26)**: El sistema mantiene `corruption_floor` (float 0.0-1.0) que representa el **mínimo permanente irrecuperable**. Actos narrativos oscuros incrementan el floor permanentemente — nunca decrece.
 
 ```
-metadata.corruption_floor: float (rango 0.0-1.0, monotónicamente creciente)
+narrative.corruption_floor: float (rango 0.0-1.0, monotónicamente creciente)
 ```
 
 **Reglas**:
 - `corruption_floor` se inicializa a 0.0 al comenzar nueva partida
 - Solo crece cuando ocurren actos narrativos oscuros (tabla 4.1.A "sube floor")
 - Nunca decrece — ni siquiera con actos redentores
+- **Nunca excede 1.0**: `corruption_floor = min(corruption_floor + delta, 1.0)`
 - Define el mínimo al que `corruption_level` puede decaer
 
 **Ejemplo**: Edrick ejecuta 3 NPCs (+0.10 cada uno = +0.30 corrupción, +0.02 cada uno = +0.06 floor). Floor final: 0.06.
@@ -430,7 +458,7 @@ Sino:
 ```
 
 **Requisitos típicos de rama**:
-- `major_events["evento_la_voz_del_gato"] == true` — muestra solo si ocurrió el evento
+- `major_events.get("evento_la_voz_del_gato", 0) >= 1` — muestra solo si ocurrió el evento (fase 1+)
 - `npc_reputation > 0.5` — muestra solo si el NPC te aprecia
 - `equipped_demons.contains("fuego")` — muestra solo si tienes Fuego equipado (reacción temática)
 - `corruption_level >= 0.7` — muestra solo si Edrick está corrompido
@@ -468,7 +496,7 @@ Ejemplo: Si un demonio "X" tiene `restriction_event_key = "acto_2_inicio"` y `re
 4. Si jugador intenta equiparlo sin desequipar: UI rechaza con mensaje "Loadout lleno. Máximo 5 demonios."
 5. Jugador desequipa uno, LUEGO equipa el nuevo
 
-**Restricción**: El sistema NUNCA auto-desequipa un demonio por el jugador. Decisión manual.
+**Restricción**: El sistema NUNCA auto-desequipa un demonio cuando el jugador obtiene uno nuevo (cuando el loadout está lleno). La decisión de qué desequipar es del jugador. EXCEPCIÓN: Si un demonio equipado se vuelve no disponible por restricción narrativa (major_events no cumple la fase), el sistema lo auto-desequipa automáticamente para mantener el loadout válido (ver CA-018 en §8.3).
 
 ---
 
@@ -619,9 +647,10 @@ Este es un **Foundation-layer system** — muchos sistemas consultan el Estado d
    - Validación: Restricciones se aplican/remuevan según loadout
 
 8. **Vinculación de Demonios** (GDD #13)
-   - Depende de: `available_demons`, momento narrativo de obtención
-   - Punto de integración: Sistema registra cada vinculación en `available_demons`
-   - Validación: Cada demonio obtenido queda registrado permanentemente
+   - Depende de: `available_demons`, `companion_state`, momento narrativo de obtención
+   - Punto de integración: Sistema registra cada vinculación en `available_demons`. Define la estructura completa de `companion_state` (ver contrato de retorno abajo)
+   - Validación: Cada demonio obtenido queda registrado permanentemente. El gato (compañero) es definido completamente por Vinculación GDD #13.
+   - **CONTRATO DE RETORNO (Vinculación → Estado del Mundo)**: Vinculación GDD #13 DEBE extender `companion_state` con: `bonding_status: string` (estados: "not_met", "encountered", "bonding", "revealed", etc.), `revelation_act: int` (acto en que se revela identidad), `relationship_history: array` (momentos clave). Estado del Mundo NO define estos detalles internos; Vinculación es responsable.
 
 9. **Combate en Tiempo Real** (GDD #6) — añadido cross-review 2026-05-26 (resuelve W-01)
    - Depende de: `equipped_demons` para calcular el tier total de corrupción pasiva
@@ -642,7 +671,8 @@ El Estado del Mundo es **independiente** — no lee de otros GDDs, solo ESCRIBE.
 
 ### 6.3 Bidireccionalidad
 
-- **Loadout ↔ Estado**: Loadout lee `available_demons`, `equipped_demons`, `cat_slot`. Estado escribe estos campos cuando Loadout los cambia.
+- **Loadout ↔ Estado**: Loadout lee `available_demons`, `equipped_demons`. Estado escribe estos campos cuando Loadout los cambia.
+- **Vinculación → Estado**: Vinculación GDD #13 escribe a `companion_state` cuando el gato es encontrado narrativamente.
 - **NPC Diálogo → Estado**: NPC Diálogo **lee** del Estado (no escribe — solo la narrativa escribe).
 - **Narrativa → Estado**: Progresión Narrativa **escribe** a Estado (`major_events`, `player_choices`, `corruption_level`). Estado no escribe a Narrativa.
 - **Transformación Visual → Estado**: Transformación Visual **lee** del Estado (no escribe).
@@ -767,87 +797,87 @@ Después de MVP (cuando todo el mundo esté jugable):
 
 ### 8.1 Carga y Serialización del Estado
 
-- [ ] **CA-001**: Al iniciar nuevo juego, `WorldState` tiene exactamente: `corruption_level == 0.0`, `equipped_demons == []`, `available_demons == ["gato"]`, `cat_slot == "gato"`, todos los `major_events` tienen fase `0`, todos los NPCs encontrados tienen `alive: true`. Verificable con test unitario que llama `WorldState.new_game()` y comprueba cada campo.
+- [ ] **CA-001**: Al iniciar nuevo juego, `WorldState` tiene exactamente: `corruption_level == 0.0`, `equipped_demons == []`, `available_demons == []`, todos los `major_events` tienen fase `0`, todos los NPCs tienen `met: false`, `alive: true`, `reputation: 0.0`. El gato vivirá en `companion_state` (definido por GDD #13). Verificable con test unitario que llama `WorldState.new_game()` y comprueba cada campo.
 - [ ] **CA-002**: El Estado del Mundo se serializa a JSON/YAML de forma bidireccional. PASS: serializar un WorldState con valores conocidos, deserializar, y verificar que cada campo tiene el mismo valor. Si `corruption_level` intenta exceder 1.0, el valor resultante es exactamente 1.0 (clamp silencioso). Si intenta bajar de 0.0, el resultado es 0.0. En ambos casos no hay error ni excepción.
-- [ ] **CA-003**: Al guardar, todos los campos críticos están presentes: `progression`, `demons`, `narrative`, `world`, `session`
-- [ ] **CA-004**: Al cargar, si faltan campos opcionales, se rellenan con valores por defecto
-- [ ] **CA-005**: Save corrupto detectable — si campos críticos faltan, sistema muestra error en logs
+- [ ] **CA-003**: Al guardar, todos los campos críticos están presentes: `progression`, `demons`, `narrative`, `world`, `session`. PASS: test que guarda, lee el JSON resultante, verifica que todas las keys están presentes.
+- [ ] **CA-004**: Al cargar, si faltan campos opcionales, se rellenan con valores por defecto. PASS: test que carga un JSON sin el campo opcional `flavor_text`, verifica que se inicializa a "" sin error.
+- [ ] **CA-005**: Save corrupto detectable — si campos críticos faltan, sistema muestra error en logs. PASS: test que intenta cargar un JSON sin `corruption_level` (crítico), verifica que genera error de validación y aparece en logs.
 
 ### 8.2 Estructura de Demonios
 
-- [ ] **CA-006**: `equipped_demons` nunca excede 5 demonios
-- [ ] **CA-007**: `available_demons` es histórico — una vez un demonio se obtiene, nunca se remueve
-- [ ] **CA-008**: Cambio de `equipped_demons` se persiste correctamente al guardar
-- [ ] **CA-009**: Obtener demonio → se añade a `available_demons` solamente (NO a `equipped_demons` automáticamente)
-- [ ] **CA-010**: Equipo demonio → se añade a `equipped_demons` si hay espacio (≤5), falla si lleno con mensaje claro
-- [ ] **CA-011**: Desequipo demonio → se remueve de `equipped_demons`, permanece en `available_demons`
-- [ ] **CA-012**: Demonio con `restriction_required_phase` no cumplida no aparece en Loadout UI (pero sigue en `available_demons`)
+- [ ] **CA-006**: `equipped_demons` nunca excede 5 demonios. PASS: test que intenta equipar 6 demonios, verifica que el 6to falla y `len(equipped_demons) == 5`.
+- [ ] **CA-007**: `available_demons` es histórico — una vez un demonio se obtiene, nunca se remueve. PASS: test que obtiene demonio, desequipa, intenta remover manualmente, verifica que sigue en `available_demons`.
+- [ ] **CA-008**: Cambio de `equipped_demons` se persiste correctamente al guardar. PASS: test que equipa demonio, guarda, recarga, verifica que sigue equipado.
+- [ ] **CA-009**: Obtener demonio → se añade a `available_demons` solamente (NO a `equipped_demons` automáticamente). PASS: test que obtiene demonio, verifica que aparece en `available_demons` pero NO en `equipped_demons`.
+- [ ] **CA-010**: Equipo demonio → se añade a `equipped_demons` si hay espacio (≤5), falla si lleno con mensaje claro. PASS: test que equipa demonio cuando hay espacio (éxito), luego llena todos y trata de equipar uno más (falla con mensaje).
+- [ ] **CA-011**: Desequipo demonio → se remueve de `equipped_demons`, permanece en `available_demons`. PASS: test que equipa demonio, desequipa, verifica que `has(equipped_demons) == false` pero `has(available_demons) == true`.
+- [ ] **CA-012**: Demonio con `restriction_required_phase` no cumplida no aparece en Loadout UI (pero sigue en `available_demons`). [MOVE TO GDD #10 Loadout & Build Management] PASS: test que restringe demonio a fase 5, verifica que no aparece en lista de equipables cuando fase < 5.
 
 ### 8.3 Gating Narrativo
 
 - [ ] **CA-013**: Después de guardar y cargar, `areas_visited['area_id'].visited` y `areas_visited['area_id'].explored_percent` tienen el mismo valor que antes de guardar. PASS: guardar con `explored_percent == 47.5`, recargar, verificar que el campo == 47.5 (±0.001).
 - [ ] **CA-014**: Después de guardar y cargar, `npc_encounters['npc_id'].reputation`, `dialogue_branches_seen`, y `alive` tienen los mismos valores que antes de guardar. PASS: guardar con `alive: false, reputation: -0.3`, recargar, verificar ambos campos.
-- [ ] **CA-015**: `player_choices` se registra cuando jugador ejecuta decisión binaria. Campo: `{value: string, act: int, timestamp: float, conscious: bool}`
+- [ ] **CA-015**: `player_choices` se registra cuando jugador ejecuta decisión binaria. Campo: `{value: string, act: int, timestamp: float, conscious: bool}`. PASS: test que registra elección, verifica que los 4 campos están presentes con tipos correctos.
 - [ ] **CA-016**: Rama de diálogo que requiere `player_choices["ejecutar_bandido_x"]["value"] == "ejecutado"` solo aparece si esa elección fue hecha. PASS: test de branch selection con valor presente vs ausente.
-- [ ] **CA-017**: Demonio se vuelve no disponible cuando `major_events["demonio_x_event"] >= required_phase` no se cumple. Fórmula 4.6 evaluada correctamente.
+- [ ] **CA-017**: Demonio se vuelve no disponible cuando `major_events["demonio_x_event"] >= required_phase` no se cumple. Fórmula 4.6 evaluada correctamente. PASS: test que evalúa fórmula con valores conocidos, verifica que demonio es no disponible cuando condición falla.
 - [ ] **CA-018**: Si demonio estaba equipado cuando se vuelve no disponible, sistema lo auto-desequipa. PASS: equipo demonio, incrementa fase restrictiva, verificar que `equipped_demons.has(demonio) == false`.
 
 ### 8.4 Corrupción Moral
 
-- [ ] **CA-019**: `corruption_level` comienza en 0.0
+- [ ] **CA-019**: `corruption_level` comienza en 0.0. PASS: test que llama `WorldState.new_game()` y verifica `corruption_level == 0.0`.
 - [ ] **CA-020**: Acción oscura incrementa `corruption_level` correctamente (ej: ejecutar +0.10). PASS: test que llama `increment_corruption(0.10)` y verifica resultado.
 - [ ] **CA-021**: Acción redentora disminuye `corruption_level` correctamente (ej: perdonar −0.08). PASS: test que llama `increment_corruption(-0.08)` y verifica resultado.
 - [ ] **CA-022**: `corruption_level` está clampado entre 0.0 y 1.0 (nunca va fuera de rango). PASS: test que suma +0.5 a nivel 0.8, verifica que resultado es 1.0 (no 1.3).
-- [ ] **CA-023**: Transformación Visual se actualiza cuando `corruption_level` cruza umbral (0.3 o 0.7). PASS: test que incrementa a 0.31 y verifica que `edrick_appearance != "integro"`.
+- [ ] **CA-023**: Transformación Visual se actualiza cuando `corruption_level` cruza umbral (0.3 o 0.7). PASS: test que incrementa a 0.31 y verifica que `edrick_appearance != "integro"`. [MOVE TO GDD #14 Transformación Visual de Edrick]
 - [ ] **CA-024**: `corruption_level` persiste correctamente al guardar/cargar. PASS: guardar en 0.45, recargar, verificar == 0.45 (±0.001).
 
 ### 8.5 Saturación Demoníaca
 
-- [ ] **CA-024**: Cuando demonio está en `equipped_demons`, su saturación aumenta (0.05 por minuto)
-- [ ] **CA-025**: Cuando demonio se desequipa, su saturación se congela (no sube más)
-- [ ] **CA-026**: Cuando demonio se re-equipa, saturación retoma desde donde quedó (no se reset)
-- [ ] **CA-027**: Saturación está clampada entre 0.0 y 1.0
-- [ ] **CA-028**: Cuando demonio se desequipa, su saturación en `demon_saturation` se mantiene en el valor en el momento de desequipar. PASS: equipar Fuego por 10 minutos de juego (saturación ≈ 0.5), desequipar, esperar 5 minutos más, verificar que `demon_saturation["fuego"] ≈ 0.5` (±0.005). Transformación Visual refleja saturación (aura más intensa según saturación).
+- [ ] **CA-025**: Cuando demonio está en `equipped_demons`, su saturación aumenta (0.05 por minuto). [blocked: clock-injection]
+- [ ] **CA-026**: Cuando demonio se desequipa, su saturación se congela (no sube más). [blocked: clock-injection]
+- [ ] **CA-027**: Cuando demonio se re-equipa, saturación retoma desde donde quedó (no se reset). [blocked: clock-injection]
+- [ ] **CA-028**: Saturación está clampada entre 0.0 y 1.0. PASS: test que intenta establecer saturación a -0.5 (resultado: 0.0) y 1.5 (resultado: 1.0). [blocked: clock-injection]
+- [ ] **CA-029**: Cuando demonio se desequipa, su saturación en `demon_saturation` se mantiene en el valor en el momento de desequipar. PASS: equipar Fuego por 10 minutos de juego (saturación ≈ 0.5), desequipar, esperar 5 minutos más, verificar que `demon_saturation["fuego"] ≈ 0.5` (±0.005). [blocked: clock-injection] Transformación Visual refleja saturación (aura más intensa según saturación) — movido a GDD #14.
 
 ### 8.6 Reputación de NPC
 
-- [ ] **CA-029**: `npc_encounters[npc_id].reputation` comienza en 0.0
-- [ ] **CA-030**: Decisión jugador que afecta NPC actualiza su reputación correctamente (ej: perdonar +0.20)
-- [ ] **CA-031**: Reputación está clampada entre -1.0 y 1.0
-- [ ] **CA-032**: Después de registrar `player_choices["ejecutar_bandido_x"]` via `record_player_choice`, el valor almacenado tiene exactamente: `value == "ejecutado"`, `act == [el acto pasado como parámetro]`, `conscious == [el bool pasado]`. PASS: test unitario que registra la acción y verifica los 4 campos del dict. NPC con reputación > 0.5 muestra rama de diálogo con `required_reputation_min: 0.5` cuando hay otras ramas disponibles — verificar que branch selection retorna la rama correcta.
-- [ ] **CA-033**: Una rama de diálogo con condición `major_events["cat_reveal"] >= 1` NO aparece cuando `major_events["cat_reveal"] == 0`. La misma rama SÍ aparece cuando `major_events["cat_reveal"] == 1`. PASS: test unitario de branch selection con ambos estados del WorldState.
+- [ ] **CA-030**: `npc_encounters[npc_id].reputation` comienza en 0.0. PASS: test que llama `WorldState.new_game()` y verifica `npc_encounters["npc_1"].reputation == 0.0` para al menos 3 NPCs.
+- [ ] **CA-031**: Decisión jugador que afecta NPC actualiza su reputación correctamente (ej: perdonar +0.20). PASS: test que llama `update_npc_reputation("npc_1", 0.20)` y verifica el valor cambió correctamente.
+- [ ] **CA-032**: Reputación está clampada entre -1.0 y 1.0. PASS: test que intenta establecer reputación a -2.0 (resultado: -1.0) y 2.0 (resultado: 1.0).
+- [ ] **CA-033**: Después de registrar `player_choices["ejecutar_bandido_x"]` via `record_player_choice`, el valor almacenado tiene exactamente: `value == "ejecutado"`, `act == [el acto pasado como parámetro]`, `conscious == [el bool pasado]`. PASS: test unitario que registra la acción y verifica los 4 campos del dict. NPC con reputación > 0.5 muestra rama de diálogo con `required_reputation_min: 0.5` cuando hay otras ramas disponibles — verificar que branch selection retorna la rama correcta. [MOVE TO GDD #15 NPC y Diálogo]
+- [ ] **CA-034**: Una rama de diálogo con condición `major_events["cat_reveal"] >= 1` NO aparece cuando `major_events["cat_reveal"] == 0`. La misma rama SÍ aparece cuando `major_events["cat_reveal"] == 1`. PASS: test unitario de branch selection con ambos estados del WorldState. [MOVE TO GDD #15 NPC y Diálogo]
 
 ### 8.7 Exploración de Área
 
-- [ ] **CA-034**: Al entrar en área, `areas_visited[area_id].visited = true`
-- [ ] **CA-035**: Si el archivo JSON de save tiene `corruption_level: null`, el sistema reemplaza el valor con `0.0` y registra WARNING en logs. Si el campo está completamente ausente, igual se inicializa a `0.0`. El sistema continúa cargando sin crash. PASS: cargar un JSON con `corruption_level: null` y verificar que el WorldState resultante tiene `corruption_level == 0.0` y que los logs contienen "corruption_level missing or null, defaulting to 0.0". Al moverse en área, `explored_percent` se actualiza basado en tiles únicos pisados.
-- [ ] **CA-036**: Cuando `explored_percent >= 90%`, área se marca como completamente explorada
-- [ ] **CA-037**: Un save con `metadata.version: "1.0"` cargado en sistema `version: "1.1"` aplica el migrador de versión. Campos nuevos en 1.1 se inicializan a sus defaults. Campos removidos se ignoran silenciosamente. PASS: el WorldState migrado puede guardarse y recargarse sin pérdida adicional. (Solo aplicable cuando exista una segunda versión del schema — este AC está latente hasta entonces.) Contenido gateado por exploración se desbloquea cuando se alcanza 90%.
+- [ ] **CA-035**: Al entrar en área, `areas_visited[area_id].visited = true`. PASS: test que llama `enter_area("area_1")` y verifica `areas_visited["area_1"].visited == true`.
+- [ ] **CA-036**: Si el archivo JSON de save tiene `corruption_level: null`, el sistema reemplaza el valor con `0.0` y registra WARNING en logs. Si el campo está completamente ausente, igual se inicializa a `0.0`. El sistema continúa cargando sin crash. PASS: cargar un JSON con `corruption_level: null` y verificar que el WorldState resultante tiene `corruption_level == 0.0` y que los logs contienen "corruption_level missing or null, defaulting to 0.0". Al moverse en área, `explored_percent` se actualiza basado en tiles únicos pisados.
+- [ ] **CA-037**: Cuando `explored_percent >= 90%`, área se marca como completamente explorada. PASS: test que establece `explored_percent = 0.91` y verifica que la bandera de "explorada completamente" se activa.
+- [ ] **CA-038**: Un save con `metadata.version: "1.0"` cargado en sistema `version: "1.1"` aplica el migrador de versión. Campos nuevos en 1.1 se inicializan a sus defaults. Campos removidos se ignoran silenciosamente. PASS: el WorldState migrado puede guardarse y recargarse sin pérdida adicional. (Solo aplicable cuando exista una segunda versión del schema — este AC está latente hasta entonces.) Contenido gateado por exploración se desbloquea cuando se alcanza 90%.
 
 ### 8.8 Guardado y Carga
 
-- [ ] **CA-038**: Al guardar, timestamp se registra en `metadata.last_save_timestamp`
-- [ ] **CA-039**: Al cargar, todos los campos del Estado se restauran exactamente como fueron guardados
-- [ ] **CA-040**: Campos de `session` (HP actual, posición) NO persisten entre cargas — se resetean
-- [ ] **CA-041**: Campos fuera de `session` (corruption_level, available_demons, etc.) SÍ persisten
-- [ ] **CA-042**: Cargar en checkpoint diferente resetea posición pero mantiene Estado del Mundo
+- [ ] **CA-039**: Al guardar, timestamp se registra en `metadata.last_save_timestamp`. PASS: test que guarda, verifica que `metadata.last_save_timestamp` es un float > 0.
+- [ ] **CA-040**: Al cargar, todos los campos del Estado se restauran exactamente como fueron guardados. PASS: save/load roundtrip con valores conocidos, verificar que cada campo es idéntico (±0.001 para floats).
+- [ ] **CA-041**: Campos de `session` (HP actual, posición) NO persisten entre cargas — se resetean. PASS: test que guarda con HP=25, recarga, verifica que HP reseteó a un valor por defecto (ej: max_hp).
+- [ ] **CA-042**: Campos fuera de `session` (corruption_level, available_demons, etc.) SÍ persisten. PASS: test que guarda con `corruption_level=0.5`, recarga, verifica que sigue siendo 0.5.
+- [ ] **CA-043**: Cargar en checkpoint diferente resetea posición pero mantiene Estado del Mundo. PASS: cargar save, cambiar checkpoint, verificar que `corruption_level` y `available_demons` persisten pero posición se reseteó.
 
 ### 8.9 Integración con Otros Sistemas
 
-- [ ] **CA-043**: Múltiples llamadas a métodos mutadores de WorldState dentro del mismo frame se procesan secuencialmente y todas tienen efecto. PASS: test que llama `increment_corruption(0.05)` tres veces en el mismo frame y verifica que `corruption_level == initial + 0.15` (±0.001). Godot es single-threaded en el game loop — no se usa threading.
-- [ ] **CA-044**: Loadout UI rechaza equipar demonio si `equipped_demons` está lleno (muestra mensaje: "Loadout lleno. Desequipa un demonio primero.")
-- [ ] **CA-045**: Loadout UI rechaza desequipar último demonio pero no falla (error/restricción es opcional — jugador puede combatir sin demonios)
-- [ ] **CA-046**: Con demonio Fuego a `demon_saturation["fuego"] == 0.0` y a `== 1.0`, el sistema de Combate calcula los mismos modificadores de daño en ambos casos. PASS: verificar que el cálculo de `damage_modifier` no lee `demon_saturation` — solo lee `equipped_demons`.
-- [ ] **CA-047**: Transformación Visual lee `corruption_level` y actualiza sprite/aura correctamente. Cuando `corruption_level` cruza umbral (0.3 o 0.7), la apariencia cambia. PASS: test que incrementa `corruption_level` a 0.31 y verifica que `edrick_appearance != "integro"`.
-- [ ] **CA-048**: NPC Diálogo consulta `major_events` antes de mostrar rama. Si rama requiere `major_events["evento_x"] >= 2` y el estado actual es `== 1`, la rama no aparece.
+- [ ] **CA-044**: Múltiples llamadas a métodos mutadores de WorldState dentro del mismo frame se procesan secuencialmente y todas tienen efecto. PASS: test que llama `increment_corruption(0.05)` tres veces en el mismo frame y verifica que `corruption_level == initial + 0.15` (±0.001). Godot es single-threaded en el game loop — no se usa threading.
+- [ ] **CA-045**: Loadout UI rechaza equipar demonio si `equipped_demons` está lleno (muestra mensaje: "Loadout lleno. Desequipa un demonio primero."). [MOVE TO GDD #10 Loadout & Build Management]
+- [ ] **CA-046**: Loadout UI rechaza desequipar último demonio pero no falla (error/restricción es opcional — jugador puede combatir sin demonios). [MOVE TO GDD #10 Loadout & Build Management]
+- [ ] **CA-047**: Con demonio Fuego a `demon_saturation["fuego"] == 0.0` y a `== 1.0`, el sistema de Combate calcula los mismos modificadores de daño en ambos casos. PASS: verificar que el cálculo de `damage_modifier` no lee `demon_saturation` — solo lee `equipped_demons`. [MOVE TO GDD #6 Combate en Tiempo Real]
+- [ ] **CA-048**: Transformación Visual lee `corruption_level` y actualiza sprite/aura correctamente. Cuando `corruption_level` cruza umbral (0.3 o 0.7), la apariencia cambia. PASS: test que incrementa `corruption_level` a 0.31 y verifica que `edrick_appearance != "integro"`. [MOVE TO GDD #14 Transformación Visual de Edrick]
+- [ ] **CA-049**: NPC Diálogo consulta `major_events` antes de mostrar rama. Si rama requiere `major_events["evento_x"] >= 2` y el estado actual es `== 1`, la rama no aparece. [MOVE TO GDD #15 Sistema de NPC y Diálogo]
 
 ### 8.10 Edge Cases
 
-- [ ] **CA-049**: Demonio obtiene ID que no existe en BD — cargar lo detecta y lo remueve de `available_demons`
-- [ ] **CA-050**: Después de mover a Edrick por exactamente 50 tiles únicos en un área con 100 tiles totales, `areas_visited['area_id'].explored_percent == 50.0`. Si se pisan tiles ya visitados, el porcentaje no cambia. PASS: test con área sintética de 100 tiles.
-- [ ] **CA-051**: Jugador está en menú Loadout cuando evento narrativo ocurre que hace demonio no disponible — UI se recarga automáticamente y demonio se desequipa si estaba equipado.
-- [ ] **CA-052**: WorldState no debe tener dependencias en Autoloads de Godot en su constructora. Debe poder instanciarse con `WorldState.new()` en un test GUT sin inicializar la escena completa. PASS: test que llama `WorldState.new()` sin `get_tree()` y sin `autoload.*` disponibles.
-- [ ] **CA-053**: Save se carga cuando Acto ha cambiado radicalmente (ej: guardado en Act 1, cargado en Act 2) — Estado antiguo persiste, sistemas posteriores lo manejan correctamente.
+- [ ] **CA-050**: Demonio obtiene ID que no existe en BD — cargar lo detecta y lo remueve de `available_demons`. PASS: test que carga un JSON con demonio ID inválido, verifica que se removió y que no hay error de runtime.
+- [ ] **CA-051**: Después de mover a Edrick por exactamente 50 tiles únicos en un área con 100 tiles totales, `areas_visited['area_id'].explored_percent == 50.0`. Si se pisan tiles ya visitados, el porcentaje no cambia. PASS: test con área sintética de 100 tiles.
+- [ ] **CA-052**: Jugador está en menú Loadout cuando evento narrativo ocurre que hace demonio no disponible — UI se recarga automáticamente y demonio se desequipa si estaba equipado. [MOVE TO GDD #10 Loadout & Build Management]
+- [ ] **CA-053**: WorldState no debe tener dependencias en Autoloads de Godot en su constructora. Debe poder instanciarse con `WorldState.new()` en un test GUT sin inicializar la escena completa. PASS: test que llama `WorldState.new()` sin `get_tree()` y sin `autoload.*` disponibles.
+- [ ] **CA-054**: Save se carga cuando Acto ha cambiado radicalmente (ej: guardado en Act 1, cargado en Act 2) — Estado antiguo persiste, sistemas posteriores lo manejan correctamente. PASS: test que carga un save de Act 1, simula cambio a Act 2, verifica que WorldState persiste sin corrupción.
 
 ### 8.11 Testing Checklist
 
@@ -894,3 +924,39 @@ Sesiones de 15-30 minutos sin demonio binding narrativo importante no tienen rec
 Antes: 3 ejecuciones (+0.30) + 3 salvaciones (−0.30) = mismo estado visual → jugador podía "redeem grind".
 
 Ahora: Cada acto oscuro sube `corruption_floor` permanentemente (+0.02 por acto); decay NO puede bajar de floor → "memoria" de crímenes pasados persiste mecánicamente.
+
+### 9.3 Trade-off: Reputación y Corrupción Son Independientes
+
+**Estado**: Conocido, MVP constraint deliberado.
+
+**El problema**: NPCs no reaccionan a cambios observados en corrupción visual. Un NPC que conoces desde Acto 1 mantiene su reputación fija incluso si Edrick se vuelve visualmente monstruoso en Acto 3. La validación es binaria (did-you-take-this-action: yes/no), no observacional (I-see-what-you-are-becoming).
+
+**Razón MVP**: Acoplar reputation a corruption requeriría que Visual Transformation (GDD #14) publique eventos cuando el estado visual cambia, y que NPC Dialogue (GDD #15) lea esos eventos. Eso es integración de 3 sistemas. MVP simplifica: reputation = lo que hiciste, corrupción = cómo luces.
+
+**Plan post-MVP**: GDD #15 (NPC y Diálogo) y GDD #14 (Transformación Visual) trabajarán juntas para añadir observación. Los NPCs notarán cuando Edrick se vuelve visiblemente corrupto y ajustarán sus diálogos/comportamiento independientemente de acciones.
+
+**Impact en Pilar 3 ("Mundo vivo y reactivo")**: Parcialmente diferido. MVP entrega reactividad a ACCIONES. Post-MVP entrega reactividad a TRANSFORMACIÓN.
+
+### 9.4 Trade-off: Demonio Cero-Equipado Permite Juego Desarmado
+
+**Estado**: Conocido, MVP constraint deliberado.
+
+**El problema**: Pilar 2 dice "demonios son cambios transformadores con costos Y beneficios". Sistema permite `equipped_demons = []` (sin demonios). Un jugador que desquipa todo puede combatir sin ninguna transformación demoníaca.
+
+**Razón MVP**: Permite momentos de pausa narrativa. Edrick como "solo humano" es temáticamente válido en ciertos momentos. La restricción mecánica (sin bonificadores, sin habilidades especiales) actúa como costo.
+
+**Nota importante**: El Gato es siempre presente (vive en `companion_state`, no en `equipped_demons`), así que no puedes estar completamente desarmado narrativamente.
+
+**Plan post-MVP**: Considerar si corrupción pasiva se aplica incluso con loadout vacío, o si demonios equipados REQUIEREN un mínimo de poder de combate para evitar trivializar ciertas áreas.
+
+### 9.5 Trade-off: "Edrick Puro" (Sin Corrupción) Sin Path Narrativo Definido
+
+**Estado**: Conocido, requiere decisión creativa.
+
+**El problema**: Sistema permite que corruption_level decaiga a corruption_floor. Pilar 5 dice transformación es "inevitable, ganada". Estos son contradictorios si un jugador puede mantener corrupción baja (<0.2 "Íntegro") durante toda la partida.
+
+**Pregunta para Creative Director**: ¿Existe un ending coherente para un Edrick que NUNCA se corrompió? ¿O la narrativa de Act 3 presupone cierto nivel de transformación?
+
+**Plan pending**: Antes de escribir GDD #16 (Progresión Narrativa), necesita resolverse: ¿hay path bajo-corrupción, o hay un corruption_floor progresivo por act que sube automáticamente con la narrativa?
+
+**Current state**: Sin decisión. Documentado como conocido; diferido a creative-director + narrative-director en fase de narrative GDD.

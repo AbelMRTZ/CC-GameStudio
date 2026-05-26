@@ -1,0 +1,2 @@
+- [Project Overview](project-overview.md) — Demons of Dravaryn: narrative-driven 2D adventure, Edrick Velmar, cat-companion twist (brother), 9 reinos
+- [Narrative Architecture Issues](narrative-arch-issues.md) — Adversarial review findings for GDD #4 (Estado del Mundo): 8 structural narrative problems

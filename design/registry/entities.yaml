@@ -28,7 +28,89 @@ last_updated: "2026-05-26"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 
-entities: []
+entities:
+  - name: agresor_melee
+    status: active
+    type: enemy_archetype
+    source: design/gdd/ia-enemigos.md
+    referenced_by:
+      - design/gdd/ia-enemigos.md
+    attributes:
+      hp: 40
+      speed_px_s: 120
+      detection_range_px: 180
+      attack_range_px: 36
+      daño_base: 12
+      tipo_daño: physical
+      attack_cooldown_s: 1.2
+      recover_duration_s: 0.5
+      patrol_range_px: 120
+      rareza: común
+    notes: "Siempre avanza; ataca (100%) en cualquier recovery de Edrick (LIGHT/HEAVY/DEMON_ABILITY). Sin retreat. Escalado: HP+30%/reino, daño+15%/reino, speed+10%/reino."
+    added: "2026-05-26"
+
+  - name: hostigador_distancia
+    status: active
+    type: enemy_archetype
+    source: design/gdd/ia-enemigos.md
+    referenced_by:
+      - design/gdd/ia-enemigos.md
+    attributes:
+      hp: 25
+      speed_px_s: 80
+      detection_range_px: 220
+      attack_range_px: 180
+      daño_base: 9
+      tipo_daño: fire_or_ice
+      attack_cooldown_s: 1.8
+      recover_duration_s: 0.7
+      patrol_range_px: 120
+      preferred_distance_px: 150
+      projectile_speed_px_s: 200
+      projectile_range_px: 400
+      rareza: común
+    notes: "Mantiene 150px de distancia. Huye si Edrick a <100px. Proyectil: 200px/s, destruye a 400px o al impactar. Oportunismo: 60% en recovery de Edrick."
+    added: "2026-05-26"
+
+  - name: defensivo
+    status: active
+    type: enemy_archetype
+    source: design/gdd/ia-enemigos.md
+    referenced_by:
+      - design/gdd/ia-enemigos.md
+    attributes:
+      hp: 60
+      speed_px_s: 70
+      detection_range_px: 160
+      attack_range_px: 40
+      daño_base: 15
+      tipo_daño: physical
+      attack_cooldown_s: 2.0
+      recover_duration_s: 0.8
+      patrol_range_px: 120
+      rareza: poco_común
+    notes: "Solo ataca en HEAVY_ATTACK recovery de Edrick. Si recibe daño en PURSUE, entra en RECOVER extra de 0.5s. El más resistente del roster MVP."
+    added: "2026-05-26"
+
+  - name: portador_corrupcion
+    status: active
+    type: enemy_archetype
+    source: design/gdd/ia-enemigos.md
+    referenced_by:
+      - design/gdd/ia-enemigos.md
+    attributes:
+      hp: 30
+      speed_px_s: 100
+      detection_range_px: 200
+      attack_range_px: 38
+      daño_base: 8
+      tipo_daño: corruption
+      attack_cooldown_s: 1.0
+      recover_duration_s: 0.45
+      patrol_range_px: 120
+      rareza: raro_2_5_pct
+    notes: "Movimiento errático (invierte dirección cada 0.5-1.2s). Ataca (100%) en cualquier recovery de Edrick. El daño de tipo corruption reduce HP pero NO afecta corruption_level — la corrupción moral sube solo por usar poderes demoníacos, no por recibirlos."
+    added: "2026-05-26"
 
 # ─── ITEMS ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +126,7 @@ formulas:
       - design/gdd/salud-daño.md
       - design/gdd/base-datos-demonios.md
       - design/gdd/combate-tiempo-real.md
+      - design/gdd/ia-enemigos.md
     expression: "round(daño_base × (1 + mod_atacante) × (1 + resistencia_defensiva))"
     variables:
       - daño_base      # daño del ataque antes de modificadores
@@ -66,6 +149,22 @@ formulas:
       - synergy_multiplier  # multiplicador de sinergia activa (sin sinergia=1.00)
     output_range: [0.0, 5.0]  # estimado; tunable
     notes: "Arcano se suma al pool de demon_modifier_i como cualquier otro demonio. No se aplica aparte."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: zone_scaling_formula
+    status: active
+    source: design/gdd/ia-enemigos.md
+    referenced_by:
+      - design/gdd/ia-enemigos.md
+    expression: "HP_N = HP_base × (1.0 + (N-1) × 0.30); daño_N = round(daño_base × (1.0 + (N-1) × 0.15)); speed_N = speed_base × (1.0 + (N-1) × 0.10)"
+    variables:
+      - HP_base       # HP del arquetipo en el Reino 1 (ver entities.yaml para cada arquetipo)
+      - daño_base     # daño_base del arquetipo en el Reino 1
+      - speed_base    # speed del arquetipo en el Reino 1
+      - N             # número de reino (N=1 = MVP, sin escalado)
+    output_range: [N_min=1, N_max=9]
+    notes: "HP escala +30%/reino, daño +15%/reino, speed +10%/reino. Valores exactos por reino se definen al diseñar cada zona. Los coeficientes son tuning knobs."
     added: "2026-05-26"
     revised: ""
 
@@ -179,6 +278,7 @@ constants:
     source: design/gdd/combate-tiempo-real.md
     referenced_by:
       - design/gdd/combate-tiempo-real.md
+      - design/gdd/ia-enemigos.md
     value: 0.3
     unit: seconds
     notes: "Duración de I-frames tras recibir un golpe. También define la duración del knockback decay."
@@ -304,4 +404,19 @@ constants:
 # health_changed(nuevo_hp, daño_recibido, tipo_daño)
 #   source: design/gdd/salud-daño.md
 #   referenced_by: HUD de Combate (GDD pendiente)
+#   added: 2026-05-26
+
+# enemy_detected(enemy_id: int)
+#   source: design/gdd/ia-enemigos.md
+#   referenced_by: design/gdd/sistema-audio.md (SFX de alerta)
+#   added: 2026-05-26
+
+# enemy_attacked(enemy_id: int, damage_type: String)
+#   source: design/gdd/ia-enemigos.md
+#   referenced_by: design/gdd/sistema-audio.md (SFX de ataque)
+#   added: 2026-05-26
+
+# enemy_died(enemy_id: int, position: Vector2, damage_type: String)
+#   source: design/gdd/ia-enemigos.md
+#   referenced_by: design/gdd/sistema-audio.md (SFX de muerte), design/gdd/estado-del-mundo.md (kill tracking)
 #   added: 2026-05-26

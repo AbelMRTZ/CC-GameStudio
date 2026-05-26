@@ -1,0 +1,1 @@
+- [Combat GDD Review Status](project-combat-gdd-status.md) — GDD #6 adversarial review 2026-05-26; 5 open issues, 2 BLOCKING
