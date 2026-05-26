@@ -1010,3 +1010,77 @@ Estos criterios de aceptación verifican que la Base de Datos de Demonios está 
 - **BLOQUEA si**: Demonio falta campo requerido, sinergia no aplica, resistencia no se calcula
 - **REVISIÓN REQUERIDA si**: Gato tiene sinergias mecánicas (violación de restricción) o interacciones narrativas no funcionan
 - **POST-MVP BALANCE**: Los valores pasarán por ajustes durante playtesting; estructura y lógica son lo crítico para aceptación
+
+---
+
+## 9. Consideraciones de Diseño Conocidas (Design Theory Warnings)
+
+Esta sección documenta issues de diseño teórico identificados en `/review-all-gdds` (2026-05-26) que NO son blockers para MVP pero deben informar balance y decisiones de scope futuras.
+
+### 9.1 D-W1: Carga Cognitiva en Combate (7-8 sistemas activos simultáneos)
+
+**Estado**: Conocido, no critical para MVP.
+
+Durante combate típico MVP (Edrick vs 2 enemigos, 3 demonios equipados), el jugador maneja:
+1. Movimiento (4 inputs: WASD)
+2. Ataque Ligero/Pesado timing (2 inputs + timing awareness)
+3. 3 slots de habilidades demoníacas (3 inputs + cooldown tracking)
+4. 3 timers de cooldown (atención visual a HUD)
+5. Gestión de HP (amenaza constante vs salud actual)
+6. I-frames awareness (cuándo es vulnerable, cuándo tiene invulnerabilidad)
+7. Audio cues (sonidos de alianza/alerta de enemigos)
+
+**Recomendación futura**: Para reducir carga:
+- **MVP Scope**: Mantener como está (3 demonios máx es el plan actual)
+- **Post-MVP Balance**: Considerar limitar a 2 slots de demonio inicialmente; añadir indicador visual pasivo de cooldowns en los iconos de demonio (no solo números)
+- **Playtesting**: Monitorear si los jugadores sienten agobio durante encuentros intensos
+
+### 9.2 D-W2: Loop de Progresión Fragmentado (no hay señal entre events de binding)
+
+**Estado**: Conocido, requiere GDD futuro (Progresión Narrativa).
+
+Sesiones de 15-30 minutos sin demonio binding no tienen recompensa tangible de "crecí". El binding demoníaco es raro y narrativo; no hay paralelo a "gold/crystals" o "bestiary entries" que refuercen progresión entre eventos grandes.
+
+**Recomendación futura**:
+- Definir "meso-loop" entre binding events: reputación de NPCs visible, entradas de Bestiary, diálogos que responden a corrupción
+- Resolver en GDD de Progresión Narrativa (no MVP)
+- **Impact**: Sin esto, sesiones cortas sin killing spree ni binding pueden sentir vacías
+
+### 9.3 D-W3: Dash+Fuego "Estela Ardiente" (sinergy sin tradeoff)
+
+**Estado**: Conocido como near-dominant, no blocker.
+
+Cada 0.6s (cooldown de Dash): Edrick obtiene damage + repositioning + I-frames + burn zone sin penalización.
+
+Comparar con otras acciones:
+- Heavy Attack (0.62s duración): 22 daño + knockback, requiere recovery larga
+- Estela Ardiente: ~15-20 daño (7 quemadura × 2 enemigos) + reposición segura + I-frames
+
+**Recomendación futura**:
+- Documentar como known balance point (no urgencia para fix)
+- Si balance pass posterior lo permite: considerar cooldown separado para estelas, o reducir daño base de quemadura en synergy
+- **Playtesting**: Monitorear si jugadores convergen en Dash+Fuego como única estrategia viables
+
+### 9.4 D-W4: Identity Vacuum pre-demonio (Edrick antes vs después)
+
+**Estado**: Conocido, design direction para Vinculación GDD.
+
+GDD #6 define combate técnico (startup/recovery, cancels) que contradice narrativa: "Edrick no es soldado entrenado". Sin demonios, Edrick ya tiene rotación funcional (Ligero, Pesado, movimiento + salto). El "antes" (pre-demonio) no contrasta claramente del "después" (con demonio).
+
+**Recomendación futura**:
+- GDD de Vinculación de Demonios (#13) debe diseñar contraste explícito: primer binding = inflection point visible
+- Opciones narrativas: primer demonio otorga habilidad mecánica completamente nueva (ej: triple jump, wall climb), no mejora los ataques existentes
+- **Playtesting**: Verificar que binding se sienta transformativo, no solo "stat buff"
+
+### 9.5 D-W5: Respawn = fuente infinita de HP (sin coste a muerte)
+
+**Estado**: Intencional (no souls-like), pero requiere Level Design GDD.
+
+Muerte → checkpoint → HP completo sin coste. Esto es by design (Pilar anti-souls-like), pero significa que HP solo importa entre checkpoints. Audio GDD depende de presión de HP para feedback (fórmula de intensidad).
+
+**Responsabilidad**: Level Design GDD (#14) debe especificar:
+- Spacing mínimo de checkpoints (ej: no cada 2 minutos)
+- Encuentros de multi-checkpoint deberían existir (donde no puedes "reset" fácil)
+- **Flag para level-designers**: "Respawn sin coste → asegura que encuentros antes de checkpoint next sean desafiantes, no triviables"
+
+---

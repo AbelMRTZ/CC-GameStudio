@@ -441,3 +441,21 @@ Ejemplo: si pones 0.75x, todas las habilidades se enfríen 25% más rápido.
 - CA-055: Si HP del jugador ≤ 0, entra en estado DEAD
 - CA-056: En DEAD, el sistema de Salud y Daño emite señal `edrick_died`
 - CA-057: No se permiten más acciones de combate en DEAD (sistema narrativo toma control)
+
+---
+
+## 9. Consideraciones de Diseño Conocidas (Design Theory Warnings)
+
+### 9.1 D-W4: Identity Vacuum Pre-Demonio
+
+**Estado**: Conocido, design direction para GDD de Vinculación.
+
+Este GDD define un sistema de combate técnico completo (startup/recovery windows, attack cancels, state machines) que contradice levemente la narrativa: Edrick es presentado como "no soldado entrenado". Sin embargo, ya posee una rotación funcional (Ligero, Pesado, movimiento, salto) que no se diferencia sustancialmente del "después" (con demonio).
+
+**Implicación**: El primer demonio que Edrick vincula debería ser un **inflection point claro** — no una mejora estadística, sino una **nueva capacidad mecánica** (ej: triple jump, wall slide, dash de ataque). Esto hace el "antes" y "después" visiblemente distintos.
+
+**Responsabilidad**: GDD de Vinculación de Demonios (#13) debe diseñar esto; este GDD solo nota la tensión.
+
+### 9.2 Coupling: HIT_STUN Duration = IFRAME_DURATION
+
+**Documentado en §7.2** — no hay parámetro separado. El knockback decays durante IFRAME_DURATION (0.3s por defecto), y HIT_STUN expira simultáneamente.

@@ -868,3 +868,29 @@ Después de MVP (cuando todo el mundo esté jugable):
 - [ ] Ejecuto NPC — corruption sube visible
 - [ ] Guardo, cierro, cargo — Estado idéntico
 - [ ] Demonio desaparece narrativamente — desequipa automáticamente
+
+---
+
+## 9. Consideraciones de Diseño Conocidas (Design Theory Warnings)
+
+### 9.1 D-W2: Meso-Loop de Progresión Fragmentado
+
+**Estado**: Conocido, requiere futura GDD de Progresión Narrativa.
+
+Sesiones de 15-30 minutos sin demonio binding narrativo importante no tienen recompensa de "crecí". El binding demoníaco es raro (narrativo, no common); no hay paralelo a "gold accumulated" o "bestiary entries" que señalicen progresión entre eventos grandes.
+
+**Recomendación**: GDD futura de Progresión Narrativa debe definir meso-loop rewards:
+- Reputación de NPCs visible (ej: "Aldea C te reconoce (+10 rep)")
+- Entradas de Bestiary desbloqueadas por kill específicos
+- Diálogos de NPCs que responden a `corruption_level` (ej: NPC rehúye a Edrick si está muy corrupto)
+- Saturación: visible en world (ej: plantas mueren cerca de Edrick si saturación > 0.8)
+
+**Impact en diseño actual**: Este GDD es responsable de mantener el `WorldState`. La estructura está lista. El "qué recompensa al jugador entre bindings" es responsabilidad de sistemas narrativos posteriores (GDD Progresión, GDD Diálogos, GDD Bestiario).
+
+### 9.2 D-W6: Corrupción Reversible Permite Min-Maxing — RESOLVED
+
+**Estado**: Resuelto mediante `corruption_floor` mechanism (implementado 2026-05-26).
+
+Antes: 3 ejecuciones (+0.30) + 3 salvaciones (−0.30) = mismo estado visual → jugador podía "redeem grind".
+
+Ahora: Cada acto oscuro sube `corruption_floor` permanentemente (+0.02 por acto); decay NO puede bajar de floor → "memoria" de crímenes pasados persiste mecánicamente.
