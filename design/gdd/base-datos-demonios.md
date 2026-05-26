@@ -193,7 +193,7 @@ restricciones:
 - **Tipo**: COMBATE
 - **Ubicación**: "Edrick" (otorgado al inicio)
 - **Habilidades Activas**:
-  - **"Dash Attack"**: 400 px/s velocidad, 0.15 segundos duración, 0.6 segundos cooldown (definido en GDD Movimiento y Física 2D)
+  - **"Dash Attack"**: velocidad, duración, cooldown definidos en **GDD #1 Movimiento y Físicas 2D** §3.7. NO se re-define aquí. Valores canónicos viven únicamente en GDD #1. El multiplicador global de cooldown (GDD #6 §7.6 `cooldown_global_scale`) puede ajustar cooldowns de todas las habilidades simultáneamente.
 - **Modificadores**: Nada (es base, no modifica)
 - **Transformación Visual**: Sprite base de Edrick con espada/arma prominente
 - **Historia**: No demonio, sino poder fundamental de Edrick como guerrero
@@ -205,7 +205,7 @@ restricciones:
 2. **Arcano + Hielo** → "Hielo Amplificado": Congelación dura 25% más tiempo
 3. **Arcano + Mente** → "Mente Amplificada": "Predecir Movimiento" esquiva N+1 ataques
 4. **Arcano + Visión** → "Visión Amplificada": Las visiones son más nítidas (narrativa + mecánica)
-5. **Arcano + Dash** → "Dash Amplificado": Velocidad del dash +25%, cooldown -0.1s
+5. **Arcano + Dash** → "Dash Amplificado": Velocidad del dash +25% (multiplicador sobre valor de GDD #1), cooldown -0.1s (reducción sobre valor canónico de GDD #1)
 6. **Mente + Visión** → "Telepatía Ancestral": Combina "Lectura Mental" + "Oráculo Fragmentado" — información sobre el pasado de NPCs
 7. **Dash + Fuego** → "Estela Ardiente": El dash deja una estela de llamas que aplica quemadura a enemigos que la tocan
 8. **Dash + Hielo** → "Estela Congelada": El dash deja una estela de hielo que congela brevemente a enemigos que la tocan

@@ -282,11 +282,18 @@ Guía de tuning:
 - Si es muy difícil: `-1–2 en ambos`
 - El ratio debe mantener Pesado siempre > Ligero (al menos 1.5x)
 
-**7.2 I-Frames Duration**
+**7.2 I-Frames Duration & HIT_STUN Coupling**
 
 | Parámetro | Valor Base | Rango Seguro | Efecto |
 |-----------|-----------|--------------|--------|
 | `IFRAME_DURATION` | 0.3s | 0.15s–0.5s | Ventana de invulnerabilidad tras daño |
+
+**Acoplamiento crítico**: La duración del estado **HIT_STUN** es idéntica a `IFRAME_DURATION` (0.3s). Cuando Edrick es golpeado:
+1. Entra en estado HIT_STUN (no puede actuar)
+2. Knockback decae linealmente durante `IFRAME_DURATION`
+3. Al expirar `IFRAME_DURATION`, HIT_STUN expira y Edrick vuelve a IDLE
+
+Si cambias `IFRAME_DURATION`, HIT_STUN cambia automáticamente. No hay parámetro separado.
 
 Guía:
 - **0.15s**: muy punishing, juego difícil, requiere skill

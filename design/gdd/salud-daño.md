@@ -36,15 +36,20 @@ Edrick comienza con **75 puntos de vida (HP)**:
 
 ### 3.2 Tipos de Daño
 
-El daño se categoriza en **5 tipos**:
+El daño se categoriza en **5 tipos** (nombres estandarizados — usar siempre PascalCase para game text y narrativa, lowercase para JSON keys/code):
 
-| Tipo | Descripción | Ejemplo de Fuente | Resistencia Típica |
-|------|-------------|-------------------|-------------------|
-| **Físico** | Daño de armas, golpes, caídas | Enemigo con espada, daño de caída | Armadura/Items especiales, Demonios |
-| **Fuego** | Daño térmico, quemaduras | Enemigo con fuego, trampas de llama | Items/Armaduras de fuego, Demonio resist. fuego |
-| **Hielo** | Daño congelante, ralentización | Enemigo con hechizo hielo | Items/Armaduras de hielo, Demonio resist. hielo |
-| **Arcano** | Daño mágico/sobrenatural | Enemigo arcano, trampas mágicas | Items/Armaduras arcanas, Demonio resist. arcano |
-| **Corrupción** | Daño relacionado con la corrupción demoníaca | Enemigo corrupto (portador de demonio) | Items/Armaduras anti-corrupción, Demonio con afinidad contraria |
+| Tipo (Game Text) | Tipo (Code Key) | Descripción | Ejemplo de Fuente | Resistencia Típica |
+|------|------|-------------|-------------------|-------------------|
+| **Físico** | `physical` | Daño de armas, golpes, caídas | Enemigo con espada, daño de caída | Armadura/Items especiales, Demonios |
+| **Fuego** | `fire` | Daño térmico, quemaduras | Enemigo con fuego, trampas de llama | Items/Armaduras de fuego, Demonio resist. fuego |
+| **Hielo** | `ice` | Daño congelante, ralentización | Enemigo con hechizo hielo | Items/Armaduras de hielo, Demonio resist. hielo |
+| **Arcano** | `arcane` | Daño mágico/sobrenatural | Enemigo arcano, trampas mágicas | Items/Armaduras arcanas, Demonio resist. arcano |
+| **Corrupción** | `corruption` | Daño relacionado con la corrupción demoníaca | Enemigo corrupto (portador de demonio) | Items/Armaduras anti-corrupción, Demonio con afinidad contraria |
+
+**Convención de nombres (establece estándar para todo el proyecto)**:
+- **Narrativa / UI**: PascalCase (`Físico`, `Fuego`, `Hielo`, `Arcano`, `Corrupción`)
+- **Code / JSON schemas**: lowercase with underscores (`physical`, `fire`, `ice`, `arcane`, `corruption`)
+- Los otros GDDs que referencien tipos de daño deben usar la columna "Tipo (Code Key)" en datos internos
 
 **Nota importante:** La **Corrupción** es un tipo de daño especial relacionado con la narrativa de Edrick. Los enemigos portadores de demonios (raros, ~2-5%) infligen daño por Corrupción. Este daño refleja la lucha interna de Edrick con su propia corrupción.
 
@@ -107,6 +112,17 @@ Cuando Edrick recibe daño:
 - Se emite una señal (signal) `health_changed(nuevo_hp, daño_recibido, tipo_daño)`
 - El HUD escucha y actualiza visualmente
 - Efectos de sonido/VFX se disparan desde el GDD de Audio/VFX (fuera de este sistema)
+
+### 3.5.1 Recalculación de HP cuando cambia el máximo
+
+Cuando el HP máximo cambia (ej: al equipar/desequipar un demonio que modifica HP):
+- Si `HP_actual > nuevo_HP_máximo`, el HP actual se reduce automáticamente a `nuevo_HP_máximo`
+- Se emite señal `health_changed(nuevo_hp, daño_implícito=0, tipo="stat_reduction")`
+- **Responsable**: El sistema de Loadout & Build Management (GDD #10 — aún no escrito) debe ser el propietario de esta lógica. Ese sistema es responsable de:
+  1. Detectar cambios de loadout de demonios
+  2. Recalcular HP máximo basado en bonificadores
+  3. Llamar a `recalculate_hp_on_max_change()` en el sistema de Salud/Daño
+- **Prevención de ciclos**: Si el demonio A aumenta HP y el demonio B lo disminuye, la recalculación aplica de forma acumulativa: `HP_máximo_total = base + ∑ demon_bonuses`
 
 ### 3.6 Muerte de Edrick
 
