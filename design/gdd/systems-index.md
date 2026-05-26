@@ -24,14 +24,14 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 | 5 | Sistema de Audio | Audio | MVP | Aprobado | [sistema-audio.md](sistema-audio.md) | — |
 | 6 | Combate en Tiempo Real | Gameplay | MVP | Aprobado | [combate-tiempo-real.md](combate-tiempo-real.md) | Movimiento, Salud/Daño, Base de Datos de Demonios |
 | 7 | IA de Enemigos (inferred) | Gameplay | MVP | Aprobado | [ia-enemigos.md](ia-enemigos.md) | Movimiento, Salud/Daño |
-| 8 | Exploración del Mundo | Gameplay | MVP | No Iniciado | — | Movimiento |
+| 8 | Exploración del Mundo | Gameplay | MVP | Diseñado | [exploracion-del-mundo.md](exploracion-del-mundo.md) | Movimiento, Estado del Mundo |
 | 9 | Cámara (inferred) | Core | MVP | No Iniciado | — | Movimiento, Exploración |
 | 10 | Loadout & Build Management | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios |
 | 11 | Motor de Sinergias | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios, Loadout |
 | 12 | Guardado y Carga (inferred) | Persistence | MVP | No Iniciado | — | Estado del Mundo |
 | 13 | Vinculación de Demonios | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios, Motor de Sinergias, Combate |
 | 14 | Transformación Visual de Edrick | Gameplay | MVP | No Iniciado | — | Loadout, Base de Datos de Demonios |
-| 15 | Sistema de NPC y Diálogo | Narrative | MVP | No Iniciado | — | Estado del Mundo |
+| 15 | Sistema de NPC y Diálogo | Narrative | MVP | Diseñado | [sistema-npc-dialogo.md](sistema-npc-dialogo.md) | Estado del Mundo |
 | 16 | Progresión Narrativa | Narrative | MVP | No Iniciado | — | Estado del Mundo, Vinculación, NPC y Diálogo |
 | 17 | Cinemáticas | Narrative | MVP | No Iniciado | — | Cámara, Progresión Narrativa, Audio |
 | 18 | HUD de Combate (inferred) | UI | MVP | No Iniciado | — | Combate, Salud/Daño, Loadout |
@@ -175,10 +175,10 @@ Ninguna detectada. El grafo de dependencias es un DAG (Directed Acyclic Graph) l
 | Métrica | Cantidad |
 |---------|----------|
 | Total sistemas identificados | 26 |
-| GDDs iniciados | 7 |
+| GDDs iniciados | 8 |
 | GDDs en revisión | 0 |
 | GDDs aprobados | 7 |
-| Sistemas MVP diseñados | 7 / 21 |
+| Sistemas MVP diseñados | 8 / 21 |
 | Sistemas Vertical Slice diseñados | 0 / 3 |
 | Sistemas Alpha diseñados | 0 / 1 |
 | Sistemas Full Vision diseñados | 0 / 1 |

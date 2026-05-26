@@ -1,4 +1,12 @@
-# Sesión Activa: Revisión y Arreglo de GDD #4
+# Sesión Activa: GDD #15 Completado — Sistema de NPC y Diálogo
+
+**GDD #15**: design/gdd/sistema-npc-dialogo.md — Estado: Diseñado (pendiente /design-review)
+**Secciones completadas**: Overview, Player Fantasy, Detailed Design, Formulas, Edge Cases, Dependencies, Tuning Knobs, Acceptance Criteria (15 ACs), Visual/Audio Requirements, UI Requirements, Open Questions
+**Próximo paso recomendado**: /design-review en sesión aparte, luego GDD #16 (Progresión Narrativa)
+
+**GDD #8**: design/gdd/exploracion-del-mundo.md — Estado: Diseñado (pendiente /design-review)
+**Secciones completas**: Overview, Player Fantasy, Detailed Design, Formulas, Edge Cases, Dependencies, Tuning Knobs, Visual/Audio, UI Requirements, Acceptance Criteria (24 ACs), Open Questions
+**Próximo paso recomendado**: /design-review en sesión aparte, luego GDD #9 (Cámara)
 
 **Fecha**: 2026-05-26 (PM — Segunda sesión)
 **Fase**: Revisión Mayor de Fundación — Estado del Mundo
@@ -198,3 +206,18 @@ Especialistas validan los arreglos:
 3. **Siguiente sesión**: Empezar GDD #15 (NPC y Diálogo) — arquitectura narrativa lista
 4. **Cuando esté listo**: Resolver §9.5 con creative-director (para GDD #16)
 5. **Meta**: `/gate-check pre-production` cuando todos 21 GDDs MVP estén completos
+
+---
+
+## Session Extract — /review-all-gdds 2026-05-27
+
+- Verdict: 🟢 PASS WITH MINOR FIXES
+- GDDs reviewed: 8 sistemas + game-concept + systems-index
+- Flagged for revision: Ninguno (todos los bloqueantes técnicos previos ya resueltos)
+- Blocking issues: 0
+- Bidireccionalidad fixes aplicados: BD-01 (Estado del Mundo + Exploración), BD-02 (Salud/Daño + HUD futuro), BD-03 (Combate #? → #7/#13/#18), BD-04 (Audio #13 → #16), BD-05 (Audio #11 → #14)
+- Scope decisión: NO items pickup-ables en MVP — documentado en game-concept.md
+- Gap analysis: Cero gaps reales. Scope de 26 GDDs es suficiente.
+- Recommended next: /design-system npc-y-dialogo (#15) — dependencias resueltas
+- Report: design/gdd/gdd-audit-2026-05-27.md
+- Open warnings restantes (no bloqueantes): W-02 (HP recalc, resolver en #10), W-03 (taxonomía), W-06 (HIT_STUN doc fix)
