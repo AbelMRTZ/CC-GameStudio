@@ -211,7 +211,8 @@ El Estado del Mundo solo acepta eventos de un conjunto **cerrado y versionado** 
     "choice":    "Jugador tomó una decisión narrativa explícita (diálogo, acción binaria)",
     "discovery": "Jugador descubrió un área, objeto o secreto por primera vez",
     "binding":   "Edrick vinculó un nuevo demonio (momento narrativo único)",
-    "dialogue":  "NPC completó una rama de diálogo con contenido narrativo persistente"
+    "dialogue":  "NPC completó una rama de diálogo con contenido narrativo persistente",
+    "whisper":   "Edrick fue expuesto a un susurro demoniaco y lo interrumpió (corrupción proporcional al tiempo escuchado)"
   }
 }
 ```
@@ -224,13 +225,21 @@ El Estado del Mundo solo acepta eventos de un conjunto **cerrado y versionado** 
 **Contrato para sistemas downstream**: Al registrar un evento, los campos obligatorios son:
 ```
 world_state.record_event(
-  event_type: string,    // Uno de los 5 tipos definidos arriba
-  event_key: string,     // ID único del evento específico (ej: "ejecutar_bandido_x")
+  event_type: string,    // Uno de los 6 tipos definidos arriba
+  event_key: string,     // ID único del evento específico (ej: "ejecutar_bandido_x" o "susurro_001")
   value: string,         // Resultado o dato del evento
   act: int,              // Acto narrativo actual (1, 2 o 3)
   conscious: bool        // True si fue acción explícita del jugador; false si fue consecuencia
 )
 ```
+
+**Nota especial para event_type="whisper"** (GDD #8 — Exploración del Mundo):
+- `event_key`: ID único del susurro (ej: "susurro_001_reino_1")
+- `value`: Porcentaje de audio escuchado como string (ej: "0.5" para 50%)
+- `pct_listened`: float ∈ [0.0, 1.0] — parámetro adicional que indica qué porcentaje del susurro fue escuchado antes de interrumpir
+- `conscious`: true (siempre — el jugador consciente elige interrumpir o dejar terminar el susurro)
+- El delta de corrupción_floor se calcula internamente: `corruption_delta = whisper_base_delta × pct_listened`
+- El susurro trigger se marca como "completado" y no se repetirá en futuras visitas
 
 ### 3.6 Ejemplos de Reactividad Completa
 
@@ -656,6 +665,11 @@ Este es un **Foundation-layer system** — muchos sistemas consultan el Estado d
    - Depende de: `equipped_demons` para calcular el tier total de corrupción pasiva
    - Punto de integración: Estado del Mundo escucha señal `corruption_passive_tick(amount_per_minute)` emitida por Combate cada 60s en combate activo. Aplica delta a `corruption_level` (ver Sección 4.1.B). Lee tabla de tiers desde GDD #3 §4.3.
    - Validación: Tiempo en combate activo se traduce correctamente en ganancia de corrupción según loadout
+
+10. **Exploración del Mundo** (GDD #8) — añadido auditoría 2026-05-27 (resuelve BD-01)
+    - Depende de: `visited_zones`, `discovered_pois`, `discovered_secrets` para persistir progreso de exploración
+    - Punto de integración: Estado del Mundo escucha señales emitidas por Exploración: `zona_visitada(zona_id)`, `poi_activado(poi_id, tipo)`, `secreto_descubierto(secreto_id)`. Cada señal actualiza el campo correspondiente en `world_state`.
+    - Validación: Al recargar save, las zonas previamente visitadas permanecen marcadas; los POIs activados no se vuelven a disparar; los secretos descubiertos aparecen en Bestiario/Mapa.
 
 ### 6.2 Dependencias Salientes (qué este sistema necesita)
 
