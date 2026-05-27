@@ -1,223 +1,287 @@
-# Sesión Activa: GDD #15 Completado — Sistema de NPC y Diálogo
+# Sesión Activa: design-review + REVISION GDD #9 Cámara — COMPLETO
 
-**GDD #15**: design/gdd/sistema-npc-dialogo.md — Estado: Diseñado (pendiente /design-review)
-**Secciones completadas**: Overview, Player Fantasy, Detailed Design, Formulas, Edge Cases, Dependencies, Tuning Knobs, Acceptance Criteria (15 ACs), Visual/Audio Requirements, UI Requirements, Open Questions
-**Próximo paso recomendado**: /design-review en sesión aparte, luego GDD #16 (Progresión Narrativa)
-
-**GDD #8**: design/gdd/exploracion-del-mundo.md — Estado: Diseñado (pendiente /design-review)
-**Secciones completas**: Overview, Player Fantasy, Detailed Design, Formulas, Edge Cases, Dependencies, Tuning Knobs, Visual/Audio, UI Requirements, Acceptance Criteria (24 ACs), Open Questions
-**Próximo paso recomendado**: /design-review en sesión aparte, luego GDD #9 (Cámara)
-
-**Fecha**: 2026-05-26 (PM — Segunda sesión)
-**Fase**: Revisión Mayor de Fundación — Estado del Mundo
-**Milestone**: Estabilizar esquema Foundation para desbloquear 5 GDDs dependientes
-
-## Estado Actual
-
-### GDD #4 (Estado del Mundo) — En Reparación (Sesión 2)
-**Status**: 🟡 **REVISION IN PROGRESS** → Finalizando edits menores
-
-**Progreso:**
-- ✅ FASE 1 (Esquemas): 6/6 bugs arreglados
-- ✅ FASE 2 (Narrativos): 5 problemas documentados como trade-offs MVP
-- ✅ FASE 3 (ACs): 16 ACs untestables remediadas
-  - 1 duplicado CA-024 renumerado (cascada 813-857)
-  - 4 ACs time-dependent marcadas [blocked: clock-injection]
-  - 5 ACs de integración reclasificadas a GDDs dependientes
-  - 12 PASS conditions agregadas/mejoradas
-- ✅ FASE 4 (Re-review especialistas): Completada
-  - Game-Designer: NEEDS REVISION (4 bloqueantes técnicos identificados)
-  - Systems-Designer: 2 bugs mayores + 3 menores
-  - QA-Lead: 7 defectos, 38 ACs testeables
-  - Narrative-Director: Puedes escribir narrativa AHORA
-- ✅ BLOQUEANTES TÉCNICOS ARREGLADOS (4):
-  - GAP-01: Gato en ejemplos §3.6 → removido
-  - GAP-02: major_events == true → cambiado a >= 1
-  - GAP-04: auto-desequipa clarificado (restricción narrativa sí, obtención nueva no)
-  - QA-D1: CA-028 sin PASS → añadido PASS condition
-- ✅ DEFINICIÓN CANÓNICA DE CORRUPCIÓN: Creada tabla que apunta a definiciones en cada GDD
-
-**Cambios aplicados (2026-05-26 Sesión 2):**
-- Schema: corruption_floor consolidado, available_demons init, cat_slot definido, demon_saturation init, clamp agregado
-- Narrativo: companion_state contrato creado, trade-offs documentados
-- ACs: +12 PASS conditions, +4 blocked tags, +5 MOVE labels, renumeración cascada
-
-**Sistemas bloqueados hasta que se arregle GDD #4:**
-- #10 Loadout & Build Management
-- #14 Transformación Visual de Edrick
-- #15 NPC y Diálogo
-- #16 Progresión Narrativa
-- #22 Seguimiento Moral
-
-## Plan de Revisión — Sesión 2 (Completada: FASE 1-3, Pendiente: FASE 4)
-
-### FASE 1: Arreglos de Esquema (1 hora)
-
-**B1 — `corruption_floor` ubicada en dos lugares**
-- Problema: §3.1 dice `narrative:`, §4.1.D dice `metadata:`
-- Fix: Consolidar a UN lugar (recomendado: `narrative:`)
-- Impacto: D-W6 (piso de corrupción) actualmente no funciona
-- Duración: 15 min
-
-**B2 — `available_demons` init contradictoria**
-- Problema: CA-001 dice `["gato"]`, §3.2 dice `[]`
-- Fix: Definir claramente como `[]` en init, gato va a `companion_state`
-- Duración: 15 min
-
-**B3 — `cat_slot` referenciado pero no definido**
-- Problema: CA-001 y §6.3 lo usan, no existe en §3.1
-- Fix: O definir en esquema O remover todas las referencias
-- Duración: 15 min
-
-**B4 — `demon_saturation` nunca se inicializa**
-- Problema: Formula 4.2 lee sin init → KeyError crash
-- Fix: Añadir paso de inicialización en §3.2
-- Duración: 10 min
-
-**B5 — `corruption_floor` sin ceiling**
-- Problema: Puede exceder 1.0 tras ~35 actos oscuros
-- Fix: Añadir clamp en fórmula: `min(floor + increment, 1.0)`
-- Duración: 10 min
-
-**B6 — Código de ejemplo §3.4 es VIEJO**
-- Problema: Muestra `player_choices["key"] == "val"` (incorrecto)
-- Fix: Corregir a `player_choices["key"]["value"] == "val"`
-- Duración: 10 min
-
-### FASE 2: Problemas Narrativos (1 hora)
-
-**N1 — Cat reveal sin data home**
-- Problema: Act 3 twist (gato es hermano muerto) no está en esquema
-- Fix: Añadir contrato explícito: "Vinculación GDD #13 define `companion_state`"
-- Duración: 15 min
-
-**N2 — Gato tratado como ítem de inventario**
-- Problema: Está en `available_demons` como demonio equipable
-- Fix: Mover a `companion_state` separado de demons
-- Duración: 15 min
-
-**N3-N5 — Otros problemas narrativos**
-- Reputación/corrupción orthogonales
-- Schema tracks acts no character
-- Pure Edrick run sin path narrativo
-- Fix: Documentar como "Trade-offs MVP" en sección nueva
-- Duración: 30 min
-
-### FASE 3: Fijar ACs Untestables (1 hora)
-
-**Q1 — 16 ACs untestables (de 53)**
-- 7 sin PASS condition → escribir PASS conditions explícitas
-- 4 time-dependent → marcar como `[blocked: clock-injection]`
-- 5 testing otros sistemas → mover a GDDs dependientes
-- 1 CA-024 duplicate → renumerar a CA-024b
-- Duración: 1 hora
-
-### FASE 4: Re-Review Enfocado (1.5 horas)
-
-Especialistas validan los arreglos:
-- Game-Designer: ¿Pilares todavía se sostienen?
-- Systems-Designer: ¿Esquema es ahora consistente?
-- QA-Lead: ¿ACs son ahora testeables?
-- Narrative-Director: ¿Narrativa puede escribirse ahora?
+**Tarea**: `/design-review design/gdd/camara.md` → Revisión adversarial + revision fixes aplicados
+**Estado**: ✅ REVISIONS COMPLETE — Listo para re-review
+**Archivo**: design/gdd/camara.md
+**Modo de revisión**: full (4 especialistas + reescrituras iterativas)
 
 ---
 
-## Checklist de Arreglos
+## SESIÓN 1/4: Arquitectura + Player Fantasy (2026-05-27)
 
-### Arreglos de Esquema
-- [x] Consolidar `corruption_floor` a un ubicación (15 min) — 2026-05-26 PM
-- [x] Corregir `available_demons` init (15 min) — 2026-05-26 PM
-- [x] Definir o remover `cat_slot` (15 min) — 2026-05-26 PM
-- [x] Inicializar `demon_saturation` (10 min) — 2026-05-26 PM
-- [x] Añadir ceiling clamp a floor (10 min) — 2026-05-26 PM
-- [x] Fijar código de ejemplo §3.4 (10 min) — 2026-05-26 PM
+### Decisiones Arquitectónicas Cristalizadas
 
-### Arreglos Narrativos
-- [x] Crear contrato de cat reveal (15 min) — 2026-05-26 PM
-- [x] Mover gato a companion_state (15 min) — 2026-05-26 PM
-- [x] Documentar trade-offs conocidos (30 min) — 2026-05-26 PM
+| Decisión | Opción | Rationale |
+|----------|--------|-----------|
+| Suavizado | (A) Lerp manual en _process | MVP necesita F3 dinámico. Predecible, debuggeable. Deshabilitar position_smoothing_enabled nativo |
+| Player Fantasy | (B) Emergente, no dirigida | Follow basta para mayoría. Anchors en momentos CLAVE (5-8 por zona), no 80%+. Escalable para dev solitario |
+| Señales globales | (A) EventBus Autoload | Desacoplado. Requiere nuevo ADR arquitectónico |
+| MVP Scope | Reino 1 + narrativos | 4-6 semanas realista. Exploración + combate + algunos anchors cinematográficos |
 
-### Arreglos de ACs ✅ COMPLETADO 2026-05-26
-- [x] Escribir 12 PASS conditions (faltaban 7, se agregaron más) — renumeración necesitó 12 total
-- [x] Marcar 4 ACs time-dependent como [blocked: clock-injection]
-  - CA-025: saturation increase (0.05/min)
-  - CA-026: saturation freeze
-  - CA-027: saturation resume
-  - CA-029: saturation persist (10 minutos juego)
-- [x] Reclasificar 5 ACs de integración (marcar [MOVE TO GDD #X])
-  - CA-023 → GDD #14 (Visual Transformation)
-  - CA-033, CA-034 → GDD #15 (NPC y Diálogo)
-  - CA-045, CA-046, CA-052 → GDD #10 (Loadout)
-  - CA-047 → GDD #6 (Combat)
-  - CA-048, CA-049 → GDD #15 (NPC y Diálogo)
-- [x] Renumerar CA-024 duplicate (y cascada)
-  - Segunda CA-024 (Saturación) → CA-025
-  - Cascada: todas las ACs de 8.5 en adelante (+1 a cada número)
-  - Total ACs ahora: 54 (de 53)
+### Secciones Reescritas (9 de 11)
 
-### Re-Review
-- [ ] Especialistas revisan cambios (90 min) — PENDIENTE FASE 4
-- [ ] Verificar no hay nuevos gaps (30 min) — PENDIENTE FASE 4
+✅ **Overview** — Especifica lerp manual, desactiva Camera2D.limit_*  
+✅ **Player Fantasy** — "Composición emergente del movimiento natural" (no "cada plano dirigido")  
+✅ **R2 — Follow Suave** — Especifica lerp manual con código Godot, elimina position_smoothing nativo  
+✅ **R4 — Límites** — Límites locales, no asignados a Camera2D.limit_* (evita double-clamping)  
+✅ **Interactions** — Añade EventBus, explicita GDD #6 como upstream  
+✅ **Dependencies** — GDD #6 ahora declarado explícitamente  
+✅ **Tuning Knobs** — Elimina `look_ahead_reset_time` fantasma, añade `lerp_delta_clamp_max`  
+✅ **F5 — Posición Final** — Añade guardia zoom > 0.01, implementa centrado zona pequeña  
+✅ **E1 — Pivote** — Actualiza para referirse a lerp manual  
+
+❌ **Pendientes (Sesión 2)**:  
+- F1, F2, F3 (refactor de semántica)
+- E2–E7 (actualizar post-arquitectura)
+- Rewrite completo de ACs
 
 ---
 
-## Archivos Siendo Modificados
-- `design/gdd/estado-del-mundo.md` — MAIN
-- `design/gdd/reviews/estado-del-mundo-review-log.md` — Log de revisión
-- `design/gdd/systems-index.md` — YA ACTUALIZADO (GDD #4: Aprobado → En Revisión)
+## SESIÓN 2/4 COMPLETADA — 2026-05-27 (Fórmulas + Acceptance Criteria)
+
+### Secciones Reescritas en Sesión 2
+
+✅ **F1 — Posición Objetivo** — Clarifica dir_input (discreto) vs velocity (continuo). Nota sobre intención.  
+✅ **F2 — Look-Ahead Dinámico** — Especifica convergencia real (~0.57s al 95%, no ~0.3s). Tiempos documentados.  
+✅ **F3 — Transición de Modo** — Clarifica continuidad al interrumpir (from = valor actual). Código GDScript.  
+✅ **Acceptance Criteria** — Reescritos 10 ACs + 5 nuevos para edge cases. Total 15 ACs testables.
+
+### Acceptance Criteria (Ahora 15 vs 10 originales)
+
+**Testables (reescritos):**
+- AC 1: Suavizado de Posición (delta ≤ 12 px/frame)
+- AC 2: Look-Ahead en Exploración (0–50 px, 34 frames)
+- AC 3: Look-Ahead en Combate (50→20 px en 0.4s) ✓
+- AC 4: Pivote Suave (8–12 frames transición)
+- AC 5: Límites de Zona ✓
+- AC 6: Zona Pequeña se Centra ✓
+- AC 7A: Entrada a Anchor (30 px, 1.1 zoom en 0.5s)
+- AC 7B: Salida de Anchor (simetría confirmada)
+- AC 8: Transición Zona sin Glitch (secuencia correcta)
+- AC 9A: Cinemática Inicio/Fin (estados + interpolación)
+- AC 9B: CINEMATIC bloqueado desde TRANSITION
+- AC 9C: Estado post-cinemática = FOLLOW_EXPLORE
+- AC 10: Input Responsivo (≤ 1 frame = 16.6ms)
+
+**Nuevos para Edge Cases:**
+- AC 11: Transición Zona Durante Combate (E3)
+- AC 12: Dos Anchors Superpuestos (E4)
+- AC 13: Dash 400 px/s (E5)
+- AC 14: Zona Cargando Lentamente (E6)
+- AC 15: Zoom Extremo + Offset Grande (E7)
+
+### Problemas Bloqueantes (Sesión 1-2): Resueltos
+
+| Problema | Status |
+|----------|--------|
+| 1. Suavizado nativo vs manual | ✅ DECIDIDO: lerp manual |
+| 2. Double-clamping F5 + limit_* | ✅ DECIDIDO: desactivar limit_* |
+| 3. zoom type float vs Vector2 | ✅ DOCUMENTADO en F4 |
+| 4. Guardia división por cero F5 | ✅ IMPLEMENTADA |
+| 5. Centrado zona pequeña F5 | ✅ IMPLEMENTADO |
+| 6. Player Fantasy contradictoria | ✅ REDEFINIDA (emergente) |
+| 7. `look_ahead_reset_time` fantasma | ✅ ELIMINADO |
+| 8. F5 incompleta | ✅ COMPLETADA |
+| 9. F1+F2 inconsistencia (against-wall) | ✅ REESCRITA F1 (dir_input ≠ velocity) |
+| 10. F2 documentación falsa | ✅ REESCRITA F2 (0.57s real) |
+| 11. GDD #6 ausente Dependencies | ✅ AÑADIDO explícitamente |
+| 12. 7/10 ACs no testables | ✅ REESCRITOS 10, +5 nuevos |
+| 13. 5 edge cases sin AC | ✅ CREADOS AC 11–15 |
+
+### Problemas PENDIENTES para Sesión 3-4
+
+- [ ] E2–E7 Edge Cases (actualizar descripciones post-arquitectura)
+- [ ] Crear ADRs (Señales EventBus, Suavizado Manual)
+- [ ] Open Questions (actualizar si aplica post-revisión)
+- [ ] Verificar bidireccionalidad Dependencies (¿GDD #6, #8 mencionan cámara?)
 
 ---
 
-## Decisiones Tomadas Esta Sesión
-- ✅ Opción A: Revisar ahora (no escalar a producer)
-- ✅ Consolidar corruption_floor en `narrative:` (no metadata)
-- ✅ Definir available_demons init como `[]`, gato → companion_state
-- ✅ Documentar trade-offs como "MVP constraints" (no silenciar contradiciones)
+## SESIÓN 3/4 COMPLETADA — 2026-05-27 (ADRs + Bidireccionalidad)
+
+### A. Edge Cases (E2–E7) — VERIFICADAS ✅
+E2–E7 ya están actualizadas en el archivo camara.md y reflejan arquitectura lerp manual + centrado zona pequeña en F5.
+- E2 ✅: Zona pequeña → centrado automático (F5 con guardia `max_x < min_x`)
+- E3 ✅: Transición zona durante combate → estado vuelve a FOLLOW_EXPLORE post-transición
+- E4 ✅: Dos anchors superpuestos → último entrado es activo
+- E5 ✅: Dash 400 px/s → look-ahead clampeado a máximo (speed_ratio)
+- E6 ✅: Zona cargando lenta → cámara espera `zona_transition_ended`
+- E7 ✅: Zoom extremo + offset grande → F5 centra si `max < min`
+
+### B. ADRs Creados ✅
+1. **ADR-001: Manual Camera Smoothing vs Native Position Smoothing** 
+   - Archivo: docs/architecture/adr-001-manual-camera-smoothing.md
+   - Decisión: lerp manual en _process
+   - Rationale: permite F3 dinámico (smoothing_speed interpolable)
+   - Implicaciones: DESACTIVAR `position_smoothing_enabled` en Camera2D node
+
+2. **ADR-002: EventBus Autoload for Global Signal Distribution**
+   - Archivo: docs/architecture/adr-002-eventbus-global-signals.md
+   - Decisión: Autoload EventBus para signals globales
+   - Señales iniciales: `combat_started`, `combat_ended`, `zona_transition_started`, `zona_transition_ended`
+   - Implicaciones: requiere nuevo Autoload en proyecto + actualizar GDD #6
+
+### C. Open Questions ✅
+Las 3 open questions permanecen válidas (esperando clarificación de GDD #8, #17, #6):
+1. ¿Parallax automático vs definido por zona?
+2. ¿Cinemáticas pueden ignorar límites de zona?
+3. ¿Feedback visual transición combate↔exploración?
+
+### D. Bidireccionalidad Dependencies ✅
+✅ **GDD #1 (Movimiento)** — menciona: "Cámara — Depende de la posición y velocidad de Edrick para seguimiento suave"
+✅ **GDD #6 (Combate)** — ACTUALIZADO: añadido "Cámara (GDD #9) | Señales de transición de modo: combat_started y combat_ended"
+✅ **GDD #8 (Exploración)** — menciona: "Cámara (#9) | Dura | zone_bounds: Rect2 para definir los límites dentro de los que la cámara puede moverse"
 
 ---
 
-## Reporte de Aprobación Final — 2026-05-26 Sesión 2
+## Resumen de Progreso
 
-### ✅ VEREDICTO: **APROBADO** (sujeto a cambios menores documentados)
+| Sesión | Completado | Cambios |
+|--------|-----------|---------|
+| **1/4** | ✅ Arquitectura + Player Fantasy | 9 secciones reescritas |
+| **2/4** | ✅ Fórmulas (F1, F2, F3) + ACs | 10 ACs reescritos + 5 nuevos |
+| **3/4** | ✅ Edge Cases + ADRs + Dependencies | 2 ADRs + 1 GDD actualizado |
+| **4/4** | ⏳ Final Review + Síntesis | `/design-review` (próximo paso) |
 
-**Especialistas que validaron:**
-- Game-Designer: NEEDS REVISION → **APROBADO** (4 bloqueantes técnicos arreglados ✓)
-- Systems-Designer: 2 bugs mayores + 3 menores → **RESUELTO** (unanimidad en corrupción ✓)
-- QA-Lead: 7 defectos, 38 ACs testeables → **TESTEABLE** (4 bloqueantes técnicos arreglados ✓)
-- Narrative-Director: Puedes escribir narrativa AHORA → **LISTO PARA NARRATIVA** (§9.5 pending creative-director, no bloquea este GDD)
-
-### Arreglos Aplicados Esta Sesión
-
-**Bloqueantes Técnicos (4):**
-1. ✅ GAP-01: Gato en ejemplos removido
-2. ✅ GAP-02: Type mismatch (== true → >= 1) corregido
-3. ✅ GAP-04: Auto-desequipa clarificado (restricción narrativa SÍ, obtención nueva NO)
-4. ✅ QA-D1: CA-028 PASS condition añadido
-
-**Definición Canónica (1):**
-5. ✅ Tabla de DEFINICIÓN CANÓNICA DE CORRUPCIÓN insertada (apunta a GDD #3, #4, #6)
-   - Confirmada unanimidad entre GDDs
-   - Usuario aprobó definición unificada
-
-### Próximos Pasos
-
-1. **Inmediato**: Actualizar systems-index.md → GDD #4 status = "Aprobado"
-2. **Inmediato**: Append entry a review-log.md con veredicto APROBADO
-3. **Siguiente sesión**: Empezar GDD #15 (NPC y Diálogo) — arquitectura narrativa lista
-4. **Cuando esté listo**: Resolver §9.5 con creative-director (para GDD #16)
-5. **Meta**: `/gate-check pre-production` cuando todos 21 GDDs MVP estén completos
+**Context Saved**: ~50% disponible para Sesión 4
 
 ---
 
-## Session Extract — /review-all-gdds 2026-05-27
+## Secciones Completadas (2026-05-27 — SESIÓN ANTERIOR)
+- [x] Overview — Cámara como ventana del mundo + infraestructura de modo
+- [x] Player Fantasy — "El director que compone cada plano" — belleza dolorosa sin esfuerzo aparente
+- [x] Detailed Design — 6 Core Rules + States/Transitions + Cross-system interactions
+- [x] Formulas — 5 fórmulas completas (F1–F5) con tablas de variables y ejemplos
+- [x] Edge Cases — 7 edge cases cubren cambios rápidos, zonas pequeñas, anchors, dash, cinemáticas
+- [x] Dependencies — Depende de #1 (#1 Movimiento), #8 (#8 Exploración). Dependen: #17 Cinemáticas
+- [x] Tuning Knobs — 10 parámetros ajustables con rangos seguros
+- [x] Acceptance Criteria — 10 criterios testables (sigue suave, look-ahead, combate, límites, anchors, cinemáticas)
+- [x] Visual/Audio Requirements — No VFX/audio específicos (infraestructura transparente)
+- [x] UI Requirements — No UI específica
+- [x] Open Questions — 3 preguntas pendientes de GDD #8, #17, #6
 
-- Verdict: 🟢 PASS WITH MINOR FIXES
-- GDDs reviewed: 8 sistemas + game-concept + systems-index
-- Flagged for revision: Ninguno (todos los bloqueantes técnicos previos ya resueltos)
-- Blocking issues: 0
-- Bidireccionalidad fixes aplicados: BD-01 (Estado del Mundo + Exploración), BD-02 (Salud/Daño + HUD futuro), BD-03 (Combate #? → #7/#13/#18), BD-04 (Audio #13 → #16), BD-05 (Audio #11 → #14)
-- Scope decisión: NO items pickup-ables en MVP — documentado en game-concept.md
-- Gap analysis: Cero gaps reales. Scope de 26 GDDs es suficiente.
-- Recommended next: /design-system npc-y-dialogo (#15) — dependencias resueltas
-- Report: design/gdd/gdd-audit-2026-05-27.md
-- Open warnings restantes (no bloqueantes): W-02 (HP recalc, resolver en #10), W-03 (taxonomía), W-06 (HIT_STUN doc fix)
+---
+
+## Decisiones Clave Tomadas
+
+### Framing de Overview
+- Ambos: infraestructura técnica + impacto narrativo
+- Referencia a que habilita Cinemáticas
+- Control automático (usuario nunca toca la cámara)
+
+### Player Fantasy
+- **Opción elegida**: "El director que compone cada plano" (Candidato C)
+- Belleza dolorosa sin esfuerzo aparente
+- Usa regla de tercios, líneas de fuga, parallax
+- Ancla en catedral con push-in imperceptible del 5%
+
+### Detailed Design
+- Follow con look-ahead horizontal semi-proporcional (50 px exploración, 20 px combate)
+- 4 estados: FOLLOW_EXPLORE, FOLLOW_COMBAT, CINEMATIC, TRANSITION
+- Camera Anchors para composición manual (offset + zoom)
+- Límites de zona via Camera2D.limit_*
+
+### Formulas
+- F1: Posición objetivo = Edrick.pos + (dir × look-ahead)
+- F2: Look-ahead semi-proporcional a velocidad (cresce suavemente de 0 a 50 px)
+- F3: Transición de modo con lerp de 0.4s
+- F4: Anchor blend interpola offset + zoom
+- F5: Clampea final respetando límites de zona
+
+---
+
+## Verificación de Cross-Sistema
+
+✅ **Registry conflicts**: Ninguno. Las constantes de cámara son nuevas:
+- look_ahead_explore = 50 px
+- look_ahead_combat = 20 px
+- smoothing_speed_explore = 6.0
+- smoothing_speed_combat = 9.0
+- combat_transition_time = 0.4 s
+- Candidatos para añadir al registry en siguiente sesión
+
+✅ **Dependencias bidireccionales confirmadas**:
+- #1 Movimiento menciona: "Cámara — Depende de la posición y velocidad de Edrick para seguimiento suave" ✓
+- #8 Exploración menciona: "Dependen de este sistema: Cámara (#9)" ✓
+
+---
+
+## GDDs MVP Completados Hasta Ahora
+1. ✅ Movimiento y Físicas 2D (#1) — Aprobado
+2. ✅ Salud y Daño (#2) — Aprobado
+3. ✅ Base de Datos de Demonios (#3) — Aprobado
+4. ✅ Estado del Mundo (#4) — Aprobado
+5. ✅ Sistema de Audio (#5) — Aprobado
+6. ✅ Combate en Tiempo Real (#6) — Aprobado
+7. ✅ IA de Enemigos (#7) — Aprobado
+8. ✅ Exploración del Mundo (#8) — Aprobado (pending design-review)
+9. ✅ **NUEVO: Cámara (#9) — Diseñado** (pending design-review)
+10. ⏳ Loadout & Build Management (#10) — No Iniciado
+11. ⏳ Motor de Sinergias (#11) — No Iniciado
+... (21 MVP systems total)
+
+---
+
+## Próximos Pasos Recomendados
+
+**Inmediato (esta sesión o próxima)**:
+- [ ] Ejecutar `/design-review design/gdd/camara.md` en **NUEVA sesión** (no en la actual) para validación independiente
+- [ ] Si design-review da PASS: cambiar systems-index status a "Aprobado"
+- [ ] Ejecutar `/consistency-check` para verificar que los valores de cámara no conflictúan con otros GDDs
+
+**Después**:
+- [ ] Siguiente sistema en orden: GDD #10 (Loadout & Build Management) — depende de #3, sin bloqueantes
+- [ ] O: GDD #11 (Motor de Sinergias) — depende de #3 y #10
+- [ ] Cuando hayan ~15 GDDs MVP completados: ejecutar `/review-all-gdds` (holistic cross-check)
+
+---
+
+## Estadísticas de Esta Sesión
+
+- **Tiempo total**: ~2 horas (sesión + corte por contexto)
+- **Secciones diseñadas**: 11 (8 requeridas + 3 opcionales)
+- **Fórmulas**: 5 completas con tablas + ejemplos
+- **Edge cases**: 7
+- **Acceptance criteria**: 10
+- **Open questions**: 3
+- **Archivos modificados**: camara.md (creado), systems-index.md (actualizado), session-state.md (actualizado)
+- **Contexto utilizado**: ~98% (sesión cortada, reanudada)
+
+---
+
+## Decisiones Pendientes (No Bloqueantes)
+
+1. ¿Parallax automático vs definido por zona? (esperar GDD #8 clarificación)
+2. ¿Cinemáticas pueden ignorar límites de zona? (esperar GDD #17)
+3. ¿Feedback visual de transición combate↔exploración? (esperar GDD #6)
+
+---
+
+---
+
+## SESIÓN 4/4: PRÓXIMO PASO
+
+**Estado actual**: ✅ LISTO PARA `/design-review`
+
+El GDD #9 (Cámara) es:
+- ✅ Completo: 8 secciones requeridas + 3 opcionales
+- ✅ Técnicamente correcto: fórmulas verificadas, edge cases documentados, ACs testables
+- ✅ Alineado con pilares: Pilar 1 (Narrativa Cinematográfica) + Pilar 3 (Mundo Hermoso)
+- ✅ Dependencias bidireccionales actualizadas (GDD #1, #6, #8)
+- ✅ Arquitectura documentada (ADR-001, ADR-002)
+- ✅ Validable: 15 acceptance criteria con métricas claras
+
+**Archivos creados/modificados en Sesiones 1-3:**
+- design/gdd/camara.md (creado)
+- design/gdd/sistemas-index.md (actualizado)
+- design/gdd/combate-tiempo-real.md (actualizado: añadido Camera en dependientes)
+- docs/architecture/adr-001-manual-camera-smoothing.md (creado)
+- docs/architecture/adr-002-eventbus-global-signals.md (creado)
+- production/session-state/active.md (actualizado)
+
+**Próximo paso recomendado:**
+```bash
+/design-review design/gdd/camara.md
+```
+
+Este ejecutará una revisión adversarial completa del GDD por especialistas (resolución de conflictos, validación de fórmulas, consistency checks, game design theory). Si PASS: cambiar systems-index status a "Aprobado" y proceder a GDD #10 (Loadout & Build Management).

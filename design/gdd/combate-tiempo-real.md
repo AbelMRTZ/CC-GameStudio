@@ -261,9 +261,10 @@ Si un enemigo tiene -0.7 resistencia a Fuego pero la fórmula sólo permite cap 
 
 | Sistema Dependiente | Qué espera de este GDD |
 |-------------------|----------------------|
-| **IA de Enemigos** (GDD #?) | Estado actual del jugador (IDLE/LIGHT_ATTACK/HIT_STUN/etc) · cooldowns visibles · para tomar decisiones de ataque |
-| **Vinculación de Demonios** (GDD #?) | Eventos cuando demonios se equipan/desactivan · modificadores dinámicos |
-| **HUD de Combate** (GDD #?) | Señales de cooldown (`cooldown_changed(slot, value)`) · HP actual · estado de I-frames |
+| **Cámara** (GDD #9) | Señales de transición de modo: `combat_started` y `combat_ended`. La cámara recibe estas señales vía EventBus para interpolar entre submodos FOLLOW_EXPLORE ↔ FOLLOW_COMBAT |
+| **IA de Enemigos** (GDD #7) | Estado actual del jugador (IDLE/LIGHT_ATTACK/HIT_STUN/etc) · cooldowns visibles · para tomar decisiones de ataque |
+| **Vinculación de Demonios** (GDD #13) | Eventos cuando demonios se equipan/desactivan · modificadores dinámicos |
+| **HUD de Combate** (GDD #18) | Señales de cooldown (`cooldown_changed(slot, value)`) · HP actual · estado de I-frames |
 
 ## Tuning Knobs
 

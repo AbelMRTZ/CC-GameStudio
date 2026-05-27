@@ -313,6 +313,7 @@ Si HP_nuevo == 0:
 - **Combate en Tiempo Real** — Define cuándo se aplica daño, integra cálculos de hit/miss, aplica condiciones (stun, knockback)
 - **IA de Enemigos** — Los enemigos usan el mismo sistema de salud y daño; su muerte se dispara cuando HP llega a 0
 - **Movimiento y Físicas 2D** — Knockback del daño es opcional (definido en Combate, no aquí)
+- **HUD de Combate** (GDD #18, futuro) — Leerá `HP_actual` y `HP_max` para renderizar la barra de salud y reaccionar a eventos de daño. Añadido auditoría 2026-05-27 (resuelve BD-02).
 
 ### 6.3 Integración con Otros Sistemas
 

@@ -392,7 +392,7 @@ Si una **cinemática tiene música narrativa que no loopea** y **la cinemática 
    - Espera: Audio activa VO, sincroniza labios (si aplicable), atenúa otras capas
    - Audio responde: Atenúa música/SFX ambiental; activa VO; restaura volumen al terminar
 
-5. **Progresión Narrativa** (GDD #13)
+5. **Progresión Narrativa** (GDD #16)
    - Emite: `cinematic_started(cinematic_id)`, `cinematic_ended()`
    - Espera: Audio cambia a estado narrativo, carga música de cinemática
    - Audio responde: Transiciona a música narrativa; atenúa SFX ambiental; establece contexto de diálogo prioritario
@@ -402,7 +402,7 @@ Si una **cinemática tiene música narrativa que no loopea** y **la cinemática 
    - Espera: Audio modifica música ambiental y SFX ambientales por región
    - Audio responde: Fade a música ambiental del nueva región; activa SFX ambientales regionales
 
-7. **Transformación Visual de Edrick** (GDD #11)
+7. **Transformación Visual de Edrick** (GDD #14)
    - Emite: `visual_state_changed(demonio_actual, corruption_level)`
    - Espera: Audio debe estar en sincronización con transformación visual
    - Audio responde: Ya está sincronizado (comparte datos de corruption_level y demonio_equipado desde Estado del Mundo)

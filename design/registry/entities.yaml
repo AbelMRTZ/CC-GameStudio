@@ -307,6 +307,39 @@ constants:
     added: "2026-05-26"
     revised: ""
 
+  - name: FADE_DURATION
+    status: active
+    source: design/gdd/exploracion-del-mundo.md
+    referenced_by:
+      - design/gdd/exploracion-del-mundo.md
+    value: 0.3
+    unit: seconds
+    notes: "Duración del fade-out y fade-in en transiciones de zona. Ambos usan el mismo valor. Cambiar requiere revisar timing de Audio #5."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: LORE_DISPLAY_DURATION
+    status: active
+    source: design/gdd/exploracion-del-mundo.md
+    referenced_by:
+      - design/gdd/exploracion-del-mundo.md
+    value: 3.5
+    unit: seconds
+    notes: "Tiempo que el overlay de texto LORE permanece visible. Rango de diseño 2–5s; 3.5s es valor canónico."
+    added: "2026-05-26"
+    revised: ""
+
+  - name: LORE_EXIT_FADE
+    status: active
+    source: design/gdd/exploracion-del-mundo.md
+    referenced_by:
+      - design/gdd/exploracion-del-mundo.md
+    value: 0.2
+    unit: seconds
+    notes: "Fade-out del overlay LORE cuando el jugador sale del área antes de que expire. Sin uso fuera del sistema HUD."
+    added: "2026-05-26"
+    revised: ""
+
   - name: CORRUPTION_DECAY_RATE
     status: active
     source: design/gdd/estado-del-mundo.md
@@ -419,4 +452,29 @@ constants:
 # enemy_died(enemy_id: int, position: Vector2, damage_type: String)
 #   source: design/gdd/ia-enemigos.md
 #   referenced_by: design/gdd/sistema-audio.md (SFX de muerte), design/gdd/estado-del-mundo.md (kill tracking)
+#   added: 2026-05-26
+
+# zona_visitada(zona_id: String)
+#   source: design/gdd/exploracion-del-mundo.md
+#   referenced_by: design/gdd/estado-del-mundo.md (registra visita)
+#   added: 2026-05-26
+
+# poi_activado(poi_id: String, tipo: String)
+#   source: design/gdd/exploracion-del-mundo.md
+#   referenced_by: design/gdd/estado-del-mundo.md
+#   added: 2026-05-26
+
+# secreto_descubierto(secreto_id: String)
+#   source: design/gdd/exploracion-del-mundo.md
+#   referenced_by: design/gdd/estado-del-mundo.md
+#   added: 2026-05-26
+
+# zona_entered(zona_id: String)
+#   source: design/gdd/exploracion-del-mundo.md
+#   referenced_by: design/gdd/sistema-audio.md (crossfade de música)
+#   added: 2026-05-26
+
+# interaccion_completada()
+#   source: design/gdd/sistema-npc-dialogo.md (GDD #15 — aún no escrito)
+#   referenced_by: design/gdd/exploracion-del-mundo.md (restaura input tras POI)
 #   added: 2026-05-26

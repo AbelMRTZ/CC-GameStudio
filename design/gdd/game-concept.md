@@ -272,6 +272,7 @@ Esto transforma cada momento con el gato en ironía dramática para el jugador. 
 - Voice acting (solo texto + subtítulos)
 - Cinemáticas avanzadas (cortes de cámara simples, sin coreografía compleja)
 - Quests secundarias opcionales o áreas secretas (enfoque en ruta crítica)
+- **Items pickup-ables / inventario** — Edrick es 100% demonios+combate+narrativa. No hay pociones de HP, llaves coleccionables, ni lore notes recogibles. HP se recupera por checkpoint; lore se entrega por NPCs/cinemáticas/ambient storytelling. Confirmado en auditoría 2026-05-27.
 
 ### Tiers de Alcance
 

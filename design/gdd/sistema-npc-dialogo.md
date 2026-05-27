@@ -1,6 +1,6 @@
 # GDD: Sistema de NPC y Diálogo
 
-> **Status**: En Diseño
+> **Status**: En Revisión
 > **Autor**: Abel + agentes
 > **Última Actualización**: 2026-05-27
 > **Sistema**: NPC y Diálogo (#15)
@@ -21,7 +21,6 @@ El Sistema de NPC y Diálogo es el **conducto primario** mediante el cual Dravar
 
 Cuando Edrick habla con alguien — sea un aliado recurrente o un extraño encontrado una sola vez — el jugador debería sentir dos emociones entrelazadas: **descubrimiento del mundo** y **peso de la relación**. El descubrimiento viene de que cada NPC revela un pedazo de Dravaryn — su historia, sus miedos, sus secretos. El peso viene de notar que ese NPC tiene una opinión de Edrick *basada en lo que el jugador ha hecho*. Un NPC que antes saludaba amistosamente ahora lo mira con miedo (porque Edrick ha vinculado demonios oscuros). Un aliado que el jugador traicionó en misión anterior ahora rehúsa ayudar. Esos momentos de **reconocimiento** — "oh, sí, ellos me ven así porque yo elegí esto" — son el corazón de la fantasía. La conversación no es una cinemática que el jugador ve pasivamente; es un acto narrativo donde el jugador siente las consecuencias de sus elecciones *reflejadas en los ojos de alguien más*. Los NPCs recurrentes especialmente sirven como **espejos morales**: el jugador regresa a ellos y ve cómo su relación ha evolucionado, a veces mejorando (redención), a veces deteriorándose (caída). Y en esos momentos quietos — entre combate, entre crisis — el jugador tiene la oportunidad de conocer a alguien, de importarle, de reflexionar sobre quién se está convirtiendo. Sin eso, son solo ficheros de datos; con eso, son personajes que el jugador lamentará haber perdido (o amará haber destruido).
 
-> **Nota**: En modo `lean`, creative-director no fue consultado. Revisar manualmente antes de producción si la fantasía resuena con la visión creativa del juego.
 
 ---
 
@@ -38,17 +37,26 @@ Cuando Edrick se acerca a un NPC (entra al Area2D) y presiona [E]:
 2. Consulta `world_state.npc_encounters[npc_id]` para obtener:
    - `met: bool` — ¿ha visto Edrick a este NPC antes?
    - `dialogue_branches_seen: list[str]` — qué ramas de diálogo ya ha visto
-   - `reputation: float` — relación acumulada con este NPC (rango -1.0 a +1.0)
+   - `reputation: float` — relación acumulada con este NPC (rango -1.0 a +1.0). Si `met == false`, aplicar F3 antes de continuar: la reputación inicial puede ser −0.2 si `corruption_level ≥ CORRUPTION_THRESHOLD_FOR_PENALTY`
+   - `noble_streak: int` — número de ramas nobles consecutivas sin interacción oscura (usado para histéresis de umbral en R3)
    - `alive: bool` — ¿sigue vivo este NPC? (si es false, no activar diálogo; mostrar escena alternativa)
 3. Basado en estos valores, selecciona una rama de diálogo disponible (lógica en R3)
 4. Muestra la rama en la UI de diálogo (ver UI Requirements, sección H)
-5. Al terminar, emite `interaccion_completada()` y restaura el input (sección F)
+5. Al terminar, emite `interaccion_completada(npc_id)` y restaura el input (sección F)
+
+**Input buffer de activación**: Para evitar que el mismo press de [E] que activa el diálogo salte automáticamente la primera línea de texto, el sistema ignora inputs de avance durante los primeros `DIALOGUE_ACTIVATION_BUFFER_FRAMES` frames tras abrir la UI (ver Tuning Knobs).
 
 **Nota sobre interacciones forzadas**: En ciertos momentos narrativos vitales, el juego puede **forzar** una interacción (cinemática obligatoria donde Edrick DEBE hablar con un NPC específico). Estas interacciones omiten el paso [E] — se activan automáticamente cuando se cumplen las condiciones de la trama, bloquean input, muestran la rama designada, y restauran input después. El jugador no puede rechazarlas; son script de la historia, no interacciones opcionales.
 
 **R3 — Selección de Rama de Diálogo**
-Cada NPC tiene un árbol de ramas etiquetadas por condiciones. La selección sigue esta lógica de prioridad:
-- **Rama de momento narrativo fijo**: Si la trama requiere que este NPC diga algo específico en un momento concreto (ej: "NPC_REVEAL_act_2_scene_3"), esa rama se muestra **siempre**, ignorando reputación y contexto. Estas ramas son puntos de anclaje narrativos inamovibles.
+Cada NPC tiene un árbol de ramas etiquetadas por condiciones.
+
+**Paso previo — Filtrado por F2**: Antes de aplicar la lógica de prioridad, el sistema construye un pool de ramas candidatas aplicando F2 a todas las ramas del NPC (excluye ramas con `min_reputation` mayor a la reputación actual). La prioridad de R3 opera dentro de ese pool filtrado.
+
+Si el pool del rango de reputación seleccionado queda vacío tras el filtrado por F2, el sistema prueba el siguiente rango en orden descendente (ej: cordial → neutral → hostil) antes de recurrir al DEFAULT. Esto evita que el jugador reciba ramas contradictorias con su reputación visible.
+
+La selección sigue esta lógica de prioridad:
+- **Rama de momento narrativo fijo**: Si la trama requiere que este NPC diga algo específico en un momento concreto (ej: "NPC_REVEAL_act_2_scene_3"), esa rama se muestra **siempre** en prioridad sobre reputación y contexto. Las ramas fijas **deben autorarse con sub-variantes por tier de reputación** (ej: `NPC_REVEAL_act_2_scene_3_hostile`, `NPC_REVEAL_act_2_scene_3_neutral`, `NPC_REVEAL_act_2_scene_3_warm`) para que el beat narrativo ocurra pero el tono refleje la relación acumulada. Si el tier actual no tiene sub-variante, el sistema usa `_neutral`. **Excepción**: Si la rama fija lleva `reputation_aware: false`, se muestra sin variantes — reservado para momentos donde el tono es narrativamente insustituible (debe ser la minoría de ramas fijas).
 - **Primera vez (`met: false`)**: Si no hay rama fija, muestra rama `FIRST_ENCOUNTER`. Actualiza `met: true`.
 - **NPCs recurrentes**: Si el NPC aparece en múltiples zonas/momentos sin rama fija asignada, muestra rama basada en `reputation`:
   - `reputation < -0.5`: rama oscura/hostil
@@ -56,6 +64,10 @@ Cada NPC tiene un árbol de ramas etiquetadas por condiciones. La selección sig
   - `0.0 ≤ reputation < 0.5`: rama neutral/cordial
   - `reputation ≥ 0.5`: rama caálida/aliada
 - **Contexto narrativo**: Si ciertos eventos han ocurrido (ej: "demonio_arcano_obtenido", "acto_1_completo"), muestra rama específica
+
+**Histéresis de Umbral (Regla de Estabilización):** Para cruzar un umbral en dirección ascendente (ej: cold → neutral, neutral → warm), el jugador necesita **2 interacciones nobles consecutivas sin interacción oscura entre ellas**. El campo `noble_streak: int` en `npc_encounters[npc_id]` trackea esto: se incrementa en cada rama noble completada y se reinicia a 0 tras cualquier rama oscura. El tier visual del NPC no asciende hasta que `noble_streak ≥ 2` Y la reputación supera el umbral. El descenso (acciones oscuras) es inmediato — sin histéresis en dirección negativa.
+
+**Primer cambio de tier — Feedback de Espejo:** Cuando la reputación de un NPC cruza un umbral por primera vez (en cualquier dirección), el sistema emite `reputation_tier_changed(npc_id, old_tier, new_tier)`. Esto permite que la UI o el sistema de diálogo muestre un indicador contextual sutil (ej: texto breve en el header del diálogo: "Elder Vorn te mira diferente ahora") conectando mecánicamente la causa con el efecto. El contenido exacto es responsabilidad del autor de la rama, pero la señal garantiza que el sistema pueda entregarlo.
 - **Bloqueo de rama**: Si una rama ya fue vista (`in dialogue_branches_seen`), prioriza ramas nuevas. Si todas fueron vistas, repite una aleatoriamente
 - **Fallback**: Si ninguna rama aplica, muestra rama `DEFAULT`
 
@@ -71,13 +83,15 @@ Algunas ramas de diálogo contienen **puntos de decisión** donde el jugador eli
 3. Puede cambiar el estado del NPC: `npc_encounters[npc_id].alive = false` si el jugador eligió ejecutar
 4. Emite señal `decision_made(npc_id, decision_id, choice)` hacia Progresión Narrativa (#16) y Seguimiento Moral (#22)
 
+> **Nota sobre variables de corrupción (GDD #4):** `corruption_floor` es el mínimo permanente alcanzado por la corrupción de Edrick. Es distinto de `corruption_level`, que es el nivel actual (fluctúa con demonios equipados y recuperación pasiva). Este sistema escribe a `corruption_floor` (eleva el piso permanente) — no a `corruption_level`. El filtrado de ramas de diálogo (F2) opera sobre `reputation`, no sobre la corrupción, por lo que esta distinción no afecta la selección de ramas.
+
 **R6 — Cambios de Reputación**
-Después de cada rama de diálogo, el sistema aplica un delta de reputación:
-- Rama "acto noble extraordinario" (ej: salvar vida de un NPC): **+0.30**
-- Rama "noble": +0.15 a reputation
-- Rama "neutral": ±0.0
-- Rama "oscura": -0.15 a reputation
-- Rama "acto oscuro narrativo" (ej: ejecutar un NPC): **-0.30**
+Después de cada rama de diálogo, el sistema aplica un delta de reputación Y actualiza `noble_streak`:
+- Rama "acto noble extraordinario" (ej: salvar vida de un NPC): **+0.30** → `noble_streak += 1`
+- Rama "noble": +0.15 a reputation → `noble_streak += 1`
+- Rama "neutral": ±0.0 → `noble_streak` sin cambio
+- Rama "oscura": -0.15 a reputation → `noble_streak = 0` (reinicio)
+- Rama "acto oscuro narrativo" (ej: ejecutar un NPC): **-0.30** → `noble_streak = 0` (reinicio)
 
 **Justificación**: Como los demonios equipados ya corrompen pasivamente a Edrick (GDD #6), necesita deltas simétricos en diálogos para poder recuperarse narrativamente. Sin `+0.30` noble, la caída sería inevitable y la redención imposible — esto rompería el Pilar 5 (Transformación Moral como arco gris, no nihilista).
 
@@ -97,7 +111,7 @@ INACTIVE (listo para siguiente interacción)
 ### Interactions with Other Systems
 
 **Estado del Mundo (#4):**
-- **Lee**: `npc_encounters[npc_id]` (met, reputation, dialogue_branches_seen), `major_events`, `corruption_floor`, `available_demons`
+- **Lee**: `npc_encounters[npc_id]` (met, reputation, dialogue_branches_seen, alive), `major_events`, `available_demons`
 - **Escribe**: `npc_encounters[npc_id].met`, `.dialogue_branches_seen[]`, `.reputation`, `.alive`; `player_choices[decision_id]`, `corruption_floor` (si acto oscuro)
 
 **Exploración del Mundo (#8):**
@@ -142,41 +156,114 @@ reputation_new = clamp(reputation_old + delta, -1.0, +1.0)
 - NPC comienza en `reputation=0.0` (neutral). Rama noble (+0.15) → `reputation_new = 0.15`
 - NPC en `reputation=0.9` (muy aliado). Acto oscuro narrativo (-0.30) → `reputation_new = clamp(0.9 - 0.30, -1.0, +1.0) = 0.6`
 - NPC en `reputation=-0.8` (enemigo). Rama noble (+0.15) → `reputation_new = clamp(-0.8 + 0.15, -1.0, +1.0) = -0.65`
+- NPC en `reputation=-0.9` (enemigo). Acto oscuro narrativo (-0.30) → `reputation_new = clamp(-0.9 - 0.30, -1.0, +1.0) = -1.0` (clampeado, no -1.20)
 
-**Restricción crítica:** El delta de reputación se aplica **solo la primera vez** que el jugador ve una rama específica. Si la rama entra en fallback (repetida porque todas las demás fueron vistas), el delta NO se aplica nuevamente. Esto evita farming de reputación.
+**Restricción anti-farming:** El delta de reputación se aplica **solo la primera vez** que el jugador ve una rama regular. Si la rama entra en fallback (repetida), el delta NO se aplica nuevamente. Esto evita farming de reputación.
+
+**Excepción — ramas de reconciliación:** Las ramas marcadas como `reconciliation: true` en su definición **siempre aplican su delta**, independientemente de si fueron vistas antes. Estas ramas se desbloquean tras eventos narrativos específicos del arco de ese NPC. Para prevenir pump infinito de reputación, cada rama de reconciliación registra `reconciliation_applied_this_arc: bool` en su schema — cuando `true`, la rama sigue siendo visible y accesible (el jugador puede revivirla narrativamente) pero el delta NO se aplica nuevamente hasta que el campo sea reseteado por GDD #16 al inicio de un nuevo arco narrativo de ese NPC.
+
+**Tipos válidos de trigger de reconciliación** (cada rama debe definir al menos uno):
+- `event_trigger: String` — un evento de `major_events` del Estado del Mundo que debe haber ocurrido (ej: `"acto_2_completo"`)
+- `moral_score_threshold: float` — nivel de puntuación moral mínimo en Seguimiento Moral (para ramas que requieren cambio genuino)
+- `relationship_event: String` — evento específico de la relación con ese NPC (ej: `"elder_vorn_confrontado"`)
+
+**Requisito de contenido:** Cada NPC recurrente debe tener al menos **2 ramas de reconciliación** diseñadas, cada una asociada a un trigger diferente del arco de ese NPC. Esto garantiza que la redención tenga camino mecánico disponible aunque el primer trigger se retrase (Pilar 5 — no nihilista).
 
 ---
 
-**F2 — Accesibilidad de Rama por Corrupción y Reputación**
+**F2 — Accesibilidad de Rama por Reputación**
 
-No todas las ramas de diálogo están disponibles en todo momento. El acceso se determina por:
+No todas las ramas de diálogo están disponibles en todo momento. El acceso se determina por la reputación acumulada con ese NPC:
 
 ```
-branch_accessible = (corruption_level <= branch.max_corruption) 
-                 AND (reputation >= branch.min_reputation)
+branch_accessible = (reputation >= branch.min_reputation)
 ```
 
 **Variables:**
 
 | Variable | Símbolo | Tipo | Rango | Descripción |
 |----------|---------|------|-------|-------------|
-| Nivel de corrupción actual | corruption_level | float | [0.0, 1.0] | Corrupción moral acumulada de Edrick (GDD #4) |
-| Umbral máximo de corrupción de rama | branch.max_corruption | float | [0.0, 1.0] | Edrick no puede ver esta rama si su corrupción es mayor (1.0 = sin restricción) |
 | Reputación actual con NPC | reputation | float | [-1.0, +1.0] | Relación acumulada con este NPC |
-| Umbral mínimo de reputación de rama | branch.min_reputation | float | [-1.0, +1.0] | Edrick no puede ver esta rama si su reputación es menor (-1.0 = sin restricción) |
+| Umbral mínimo de reputación de rama | branch.min_reputation | float | [-1.0, +1.0] | Edrick no puede ver esta rama si su reputación con este NPC es menor (-1.0 = sin restricción) |
 | Rama accesible | branch_accessible | bool | {true, false} | Si el jugador puede activar esta rama ahora |
 
-**Output Range:** booleano — true (rama disponible) o false (excluida por restricciones).
+**Output Range:** booleano — true (rama disponible) o false (excluida por reputación insuficiente).
+
+**Diseño deliberado:** El nivel de corrupción de Edrick NO filtra ramas de diálogo. Las consecuencias de la corrupción ya se expresan en R3 (reputación baja → ramas hostiles) y en la narrativa. Bloquear ramas de redención por corrupción alta crearía ludonarrative dissonance contra el Pilar 5 — la redención debe siempre tener un camino mecánico disponible.
 
 **Ejemplos:**
-- Rama "confesión_redención" requiere `max_corruption=0.5` y `min_reputation=0.2`. 
-  - Edrick con `corruption=0.3, reputation=0.4` → accesible ✓
-  - Edrick con `corruption=0.7, reputation=0.4` → NO accesible (corrupción demasiado alta) ✗
-- Rama "traición_venganza" requiere `max_corruption=1.0` (sin restricción), `min_reputation=-0.7`
-  - Edrick con `corruption=0.95, reputation=-0.8` → NO accesible (reputación demasiado baja) ✗
-  - Edrick con `corruption=0.95, reputation=-0.6` → accesible ✓
+- Rama "confesión_redención" requiere `min_reputation=0.2`.
+  - Edrick con `reputation=0.4` → accesible ✓ (independientemente de su corrupción)
+  - Edrick con `reputation=0.1` → NO accesible (reputación insuficiente) ✗
+- Rama "traición_venganza" requiere `min_reputation=-0.7`
+  - Edrick con `reputation=-0.8` → NO accesible ✗
+  - Edrick con `reputation=-0.6` → accesible ✓
 
-**Nota técnica:** Las ramas excluidas por esta fórmula se omiten del pool de candidatas en R3 (selección de rama). El fallback sigue siendo válido siempre que `branch.max_corruption >= current_corruption_level`.
+**Nota técnica:** Las ramas excluidas por F2 se omiten del pool de candidatas en R3. El DEFAULT debe tener `min_reputation=-1.0` (sin restricción) para garantizar que siempre haya al menos una rama disponible.
+
+---
+
+**F3 — Reputación Inicial por Corrupción Visible**
+
+Cuando el jugador encuentra un NPC por primera vez (`met: false`), la reputación inicial se calcula:
+
+```
+initial_reputation = IF corruption_level >= CORRUPTION_THRESHOLD_FOR_PENALTY
+                     THEN max(-1.0, 0.0 - CORRUPTION_INITIAL_REPUTATION_PENALTY)
+                     ELSE 0.0
+```
+
+**Variables:**
+
+| Variable | Símbolo | Tipo | Rango | Descripción |
+|----------|---------|------|-------|-------------|
+| Corrupción actual de Edrick | corruption_level | float | [0.0, 1.0] | Nivel actual de corrupción (ver GDD #4) |
+| Umbral de penalización | CORRUPTION_THRESHOLD_FOR_PENALTY | float | [0.3, 0.7] | Por defecto 0.5 — cuando la corrupción supera esto, los NPCs nuevos notan el cambio |
+| Penalización de reputación inicial | CORRUPTION_INITIAL_REPUTATION_PENALTY | float | [0.0, 0.3] | Por defecto 0.2 — NPCs nuevos comienzan en −0.2 cuando Edrick es visiblemente corrupto |
+| Reputación inicial | initial_reputation | float | [-1.0, 0.0] | Reputación al primer encuentro, modificada por corrupción visible |
+
+**Ejemplos:**
+- Edrick con `corruption_level=0.3` (bajo umbral) → `initial_reputation = 0.0` (neutral)
+- Edrick con `corruption_level=0.7` (sobre umbral) → `initial_reputation = max(-1.0, 0.0 − 0.2) = −0.2` (ligeramente desconfiado)
+
+**Diseño deliberado:** La penalización es leve (−0.2) para no bloquear la rama `FIRST_ENCOUNTER` pero sí mostrar que el mundo reacciona a un Edrick visiblemente corrupto desde el primer encuentro (Pilar 3). El jugador recupera reputación con acciones nobles normales.
+
+---
+
+**F4 — Branch Schema (Especificación de Datos)**
+
+Cada rama de diálogo debe definir los siguientes campos. Todos son requeridos salvo los marcados como opcionales:
+
+```
+branch:
+  branch_id: String            # identificador único (ej: "elder_vorn_noble_02")
+  npc_id: String               # referencia al NPC propietario
+  branch.type: String          # "hostile" | "dark" | "neutral" | "warm" | "allied"
+  min_reputation: float        # [-1.0, +1.0] — DEFAULT debe ser -1.0
+  delta: float                 # DEBE pertenecer al conjunto {-0.30, -0.15, 0.0, +0.15, +0.30}
+  text: String                 # contenido del diálogo
+  reconciliation: bool         # false por defecto; true activa el comportamiento de Excepción en F1
+  reconciliation_applied_this_arc: bool  # false por defecto; true cuando delta ya fue aplicado en este arco
+  reconciliation_trigger:      # requerido si reconciliation: true
+    event_trigger: String?     # opcional — evento de major_events que debe haber ocurrido
+    moral_score_threshold: float? # opcional — nivel mínimo en Seguimiento Moral
+    relationship_event: String? # opcional — evento específico de la relación con este NPC
+  reputation_aware: bool       # solo aplica a ramas fijas; false = fuerza tono sin variantes
+```
+
+**Regla de consistencia branch.type / min_reputation** — los autores deben respetar esta tabla:
+
+| branch.type | min_reputation recomendado | Rango permitido |
+|-------------|---------------------------|-----------------|
+| `hostile` | -1.0 | [-1.0, -0.5) |
+| `dark` | -1.0 | [-1.0, 0.0) |
+| `neutral` | -0.5 | [-0.5, 0.5) |
+| `warm` | 0.0 | [0.0, 1.0] |
+| `allied` | 0.5 | [0.5, 1.0] |
+
+El sistema emite un warning en log si un branch tiene `branch.type` fuera del rango permitido para su `min_reputation`. Esto no bloquea la carga pero alerta al autor.
+
+**Dónde viven las ramas:** Cada NPC tiene un Resource file `NPCData_[npc_id].tres` (o equivalente en Godot 4) con un campo `branches: Array[BranchResource]`. El `BranchResource` implementa los campos de F4. El sistema NPC carga este recurso al inicializar el Area2D del NPC.
 
 ---
 
@@ -190,11 +277,11 @@ Si el jugador intenta interactuar con un NPC que está marcado como muerto (porq
 - No bloquea input (diferente de un diálogo normal)
 - No registra nada en `dialogue_branches_seen`
 
-**E2 — Rama No Accesible (Corruption/Reputation Outside Range)**
-Si todas las ramas de un NPC son inaccesibles (porque `corruption_level > branch.max_corruption` para todas):
+**E2 — Rama No Accesible (Reputación Insuficiente para Todas las Ramas)**
+Si todas las ramas regulares de un NPC son inaccesibles (porque `reputation < branch.min_reputation` para todas las ramas definidas):
 - El NPC aún puede interactuarse ([E] funciona)
-- El sistema muestra la rama `DEFAULT` (que debe tener `max_corruption=1.0` sin restricción)
-- Si ni siquiera `DEFAULT` es accesible (lo cual debería ser imposible), el sistema emite error en log y falla seguro: muestra rama `FALLBACK_SILENT` que es solo texto narrativo sin cambios de estado
+- El sistema muestra la rama `DEFAULT` (que debe tener `min_reputation=-1.0` sin restricción — siempre accesible)
+- Si ni siquiera `DEFAULT` es accesible (error de autoría de contenido), el sistema emite error en log y falla seguro: muestra rama `FALLBACK_SILENT` que es texto narrativo genérico sin cambios de estado
 
 **E3 — Dos Interacciones Simultáneas**
 Si el jugador entra a dos Areas2D de tipo NPC al mismo tiempo (ej: dos NPCs muy cercanos):
@@ -233,7 +320,6 @@ Si el juego intenta forzar una interacción con un NPC mientras el jugador está
 - La rama de la interacción opcional que fue interrumpida NO se registra en `dialogue_branches_seen` (fue cancelada)
 - El delta de reputación de esa rama NO se aplica
 
-> **Nota**: En modo `lean`, specialists no fueron consultados. Revisar manualmente antes de producción.
 
 ---
 
@@ -241,7 +327,7 @@ Si el juego intenta forzar una interacción con un NPC mientras el jugador está
 
 | Sistema | Tipo | Interfaz |
 |---------|------|----------|
-| **Estado del Mundo (#4)** | Upstream (lee/escribe) | Lee: `npc_encounters[npc_id]`, `major_events`, `corruption_level`, `available_demons`; Escribe: `npc_encounters[npc_id].met`, `.dialogue_branches_seen[]`, `.reputation`, `.alive`, `player_choices[decision_id]` |
+| **Estado del Mundo (#4)** | Upstream (lee/escribe) | Lee: `npc_encounters[npc_id]`, `major_events`, `available_demons`, `corruption_level` (para F3 en primer encuentro); Escribe: `npc_encounters[npc_id].met`, `.dialogue_branches_seen[]`, `.reputation`, `.alive`, `.noble_streak`, `player_choices[decision_id]`, `corruption_floor` (si acto oscuro) |
 | **Exploración del Mundo (#8)** | Sibling (emite señal) | Emite: `interaccion_completada()` para que Exploración restaure input tras diálogo |
 | **Progresión Narrativa (#16)** | Downstream (emite señales) | Emite: `decision_made(npc_id, decision_id, choice)`, `dialogue_branch_viewed(npc_id, branch_id)`, `npc_dead(npc_id)` |
 | **Seguimiento Moral (#22)** | Downstream (emite señales) | Emite: `moral_choice(decision_id, choice, impact: int)` cuando rama contiene acto oscuro |
@@ -262,10 +348,14 @@ Si el juego intenta forzar una interacción con un NPC mientras el jugador está
 | `REPUTATION_DELTA_DARK` | -0.15 | [-0.25, -0.10] | Cambiar velocidad de pérdida de reputación en acciones oscuras. |
 | `REPUTATION_DELTA_DARK_NARRATIVE` | -0.30 | [-0.50, -0.20] | Cambiar impacto de actos oscuros narrativos (ejecuciones, traiciones). |
 | `REPUTATION_CLAMP_MIN` | -1.0 | [-1.0, 0.0] | Mínimo posible de reputación. Si cambias a -0.5, Edrick nunca puede caer a completa enemistad. |
-| `REPUTATION_CLAMP_MAX` | +1.0 | [0.0, +1.0] | Máximo posible de reputación. Si cambias a +0.5, Edrick nunca puede ser completamente aliado. |
+| `REPUTATION_CLAMP_MAX` | +1.0 | [0.0, +1.0] | Máximo posible de reputación. **⚠ Advertencia**: Setting por debajo de 0.5 bloquea el tier warm/allied permanentemente sin que el jugador pueda saberlo. Solo cambiar con revisión de todas las ramas de cada NPC. |
+| `NOBLE_STREAK_REQUIRED` | 2 | [1, 4] | Número de interacciones nobles consecutivas (sin oscura entre ellas) necesarias para cruzar un umbral ascendente. 1 = sin histéresis (más fácil remontar). 4 = requiere compromiso sostenido. |
 | `NPC_DEAD_DISPLAY_DURATION` | 1.5 segundos | [0.5s, 3.0s] | Cuánto tiempo se muestra la escena alternativa cuando un NPC está muerto. Más corto = menos impactante; más largo = más solemne. |
 | `INTERACTION_ABORT_RESTORE_DELAY` | 0.2 segundos | [0.1s, 0.5s] | Tiempo que input se restaura brevemente cuando una interacción forzada interrumpe una opcional (E8). |
 | `DIALOGUE_UI_FADE_DURATION` | 0.3 segundos | [0.1s, 0.8s] | Duración del fade-in/fade-out cuando aparece/desaparece la UI de diálogo. |
+| `DIALOGUE_ACTIVATION_BUFFER_MS` | 150 | [100, 300] | Milisegundos de gracia al abrir el diálogo antes de aceptar input de avance. Medidos desde que el fade-in completa (no desde que el estado cambia). Evita el skip accidental de la primera línea. Independiente del framerate. |
+| `CORRUPTION_THRESHOLD_FOR_PENALTY` | 0.5 | [0.3, 0.7] | Nivel de `corruption_level` a partir del cual los NPCs nuevos comienzan con reputación penalizada (F3). Por debajo del umbral, todos los NPCs inician en 0.0. |
+| `CORRUPTION_INITIAL_REPUTATION_PENALTY` | 0.2 | [0.0, 0.3] | Penalización de reputación inicial cuando Edrick supera el umbral de corrupción. NPCs nuevos comienzan en `0.0 − penalty`. Mantener bajo para no bloquear la rama FIRST_ENCOUNTER. |
 
 **Notas de balance:**
 - Los deltas son **simétricos por diseño** — cambiar uno requiere cambiar su par (+0.30 y -0.30 juntos)
@@ -346,7 +436,6 @@ Cuando el jugador selecciona una opción de decision point:
 - Volumen bajo (feedback sutil, no punitivo)
 - Propósito: refuerzo auditivo de la naturaleza moral de la elección
 
-> **Nota**: En modo `lean`, art-director y audio-director no fueron consultados. Revisar manualmente antes de producción si los efectos visuales y sonoros alinean con la dirección artística del juego.
 
 ---
 
@@ -388,9 +477,14 @@ La interfaz de diálogo se compone de:
   - Noble: dorado/cálido
   - Oscuro: rojo/sangre
   - Neutral: blanco/gris
+- **Símbolo de tipo de rama** (accesibilidad — no depende solo de color): El símbolo aparece en el **área del header**, junto al nombre del NPC — NO dentro del cuerpo del texto de diálogo. Esto mantiene la inmersión narrativa del Pilar 1 mientras garantiza legibilidad para daltónicos:
+  - Noble: `★` en el header (color dorado)
+  - Oscura: `✖` en el header (color rojo)
+  - Neutral: sin símbolo en el header
 - **Line Height**: 1.5x para espaciado cómodo
 - **Word Wrapping**: Activo, respeta bordes del panel
 - **Duración visible**: Hasta que el jugador presione [SPACE] o [E] para avanzar (no auto-advance en MVP)
+- **Overflow**: Si el texto de una rama supera los 400 caracteres visibles con el tamaño de fuente activo, el texto se pagina internamente (el jugador avanza con [SPACE] por segmentos dentro de la misma rama — no una nueva rama). **Los autores de contenido no deben superar 400 chars por segmento de texto**, y el sistema emite `WARN: "Branch [branch_id] text exceeds display limit"` en log si el texto sin paginar supera 1200 chars.
 
 **UI4 — Opciones de Decisión (Decision Point)**
 
@@ -408,6 +502,8 @@ Cuando una rama tiene punto de decisión:
   - Opción no seleccionada: color normal (blanco)
   - Opción hovering/selected: color más brillante + pequeño indicador visual (ej: `→` símbolo o highlight de fondo)
   - Opción "dark": aura roja sutil (no asusta, pero informa)
+- **Estado de foco inicial**: Cuando la sección de opciones aparece, el foco de teclado se establece automáticamente en la **primera opción** (más arriba). El indicador de foco es un `→` animado + highlight de fondo que pasa WCAG 2.1 AA (contraste mínimo 3:1). El jugador navega antes de confirmar — no hay auto-selección.
+- **Opción única**: Si solo existe una opción, se muestra igual que opciones múltiples (sin auto-selección). El jugador debe presionar [E]/[SPACE] explícitamente. Esto aplica a decisiones con un solo camino disponible.
 - **Controller support**: Si el proyecto escala a gamepad, estas opciones deben ser navigables con D-pad
 
 **UI5 — Avance de Diálogo y Señales de Finalización**
@@ -422,6 +518,7 @@ Cuando una rama tiene punto de decisión:
 - **Tamaño de texto ajustable**: Accesibilidad → Tamaño de fuente (pequeño/normal/grande, afecta toda la UI)
 - **Contraste alto**: Si el jugador lo activa en opciones, cambiar fondos a más oscuro/más opaco para mayor contraste con texto
 - **Screen reader friendly** (4.5+ feature): Los elementos de UI de diálogo deben estar etiquetados accesiblemente para software de lectura de pantalla (Control nodes en Godot heredan esto automáticamente)
+- **focus_mode requerido**: Todos los `Control` nodes interactivos de la UI de diálogo (opciones de decisión, botón de avance) deben tener `focus_mode = FOCUS_ALL` en Godot 4. El valor por defecto de muchos Control types es `FOCUS_NONE`, lo que rompe la navegación por teclado silenciosamente.
 
 **UI7 — Transición Entre Ramas**
 
@@ -462,7 +559,7 @@ Esto crea ritmo narrativo sin interrumpir la inmersión.
 **Tipo**: Unit | **Bloquea**: Sí
 
 **CA-NPC-003** — Restauración de Input al Terminar
-**GIVEN** una conversación está en estado `INTERACTING`, **WHEN** la rama se completa y el sistema emite `interaccion_completada()`, **THEN** el estado transiciona a `DONE` y el input del jugador queda restaurado en el mismo frame o en el siguiente.
+**GIVEN** una conversación está en estado `INTERACTING`, **WHEN** la rama se completa y el sistema emite `interaccion_completada(npc_id)`, **THEN** el estado transiciona a `DONE` y `PlayerInput.is_blocked() == false` es observable síncronamente después de que la señal es procesada (sin esperar frames adicionales).
 **Tipo**: Integration | **Bloquea**: Sí
 
 **CA-NPC-004** — Selección de Rama: Primera Vez
@@ -474,11 +571,11 @@ Esto crea ritmo narrativo sin interrumpir la inmersión.
 **Tipo**: Unit | **Bloquea**: Sí
 
 **CA-NPC-006** — Selección de Rama: Reputación Hostil
-**GIVEN** `npc_encounters[npc_id].reputation < -0.5` y no hay rama fija ni primera vez, **WHEN** el sistema selecciona rama, **THEN** elige una rama marcada como oscura/hostil del pool disponible.
+**GIVEN** `npc_encounters[npc_id].reputation < -0.5` y `met == true` y no hay rama de momento narrativo fijo, **WHEN** el sistema selecciona rama del pool filtrado por F2, **THEN** elige una rama con `branch.type == "hostile"` o `branch.type == "dark"`.
 **Tipo**: Unit | **Bloquea**: Sí
 
 **CA-NPC-007** — Selección de Rama: Reputación Aliada
-**GIVEN** `npc_encounters[npc_id].reputation >= 0.5` y no hay rama fija ni primera vez, **WHEN** el sistema selecciona rama, **THEN** elige una rama marcada como cálida/aliada del pool disponible.
+**GIVEN** `npc_encounters[npc_id].reputation >= 0.5` y `met == true` y no hay rama de momento narrativo fijo, **WHEN** el sistema selecciona rama del pool filtrado por F2, **THEN** elige una rama con `branch.type == "warm"` o `branch.type == "allied"`.
 **Tipo**: Unit | **Bloquea**: Sí
 
 **CA-NPC-008** — Fórmula F1: Reputación Se Actualiza Correctamente
@@ -489,24 +586,44 @@ Esto crea ritmo narrativo sin interrumpir la inmersión.
 **GIVEN** `reputation_old = 0.9` y se completa una rama con `delta = +0.30` (acto noble extraordinario), **WHEN** el sistema aplica F1, **THEN** `reputation_new == 1.0` (clampeado, no 1.20).
 **Tipo**: Unit | **Bloquea**: Sí
 
-**CA-NPC-010** — Fórmula F1: Anti-Farming — Delta Solo en Primera Vista
-**GIVEN** el jugador ya vio la rama `"branch_noble_01"` (está en `dialogue_branches_seen`) y esta rama vuelve a aparecer por fallback, **WHEN** el jugador la ve nuevamente, **THEN** el sistema NO aplica el delta de reputación de esa rama en esa segunda vista.
+**CA-NPC-009b** — Fórmula F1: Clamp Inferior
+**GIVEN** `reputation_old = -0.9` y se completa una rama con `delta = -0.30` (acto oscuro narrativo), **WHEN** el sistema aplica F1, **THEN** `reputation_new == -1.0` (clampeado, no -1.20).
 **Tipo**: Unit | **Bloquea**: Sí
 
-**CA-NPC-011** — Fórmula F2: Rama Inaccesible por Corrupción Alta
-**GIVEN** `corruption_level = 0.7` y existe una rama con `max_corruption = 0.5`, **WHEN** el sistema evalúa el pool de ramas candidatas, **THEN** esa rama queda excluida del pool y no es seleccionable.
+**CA-NPC-010** — Fórmula F1: Anti-Farming — Delta Solo en Primera Vista (Ramas Regulares)
+**GIVEN** el jugador ya vio la rama regular `"branch_noble_01"` (está en `dialogue_branches_seen`) y esta rama vuelve a aparecer por fallback, **WHEN** el jugador la ve nuevamente, **THEN** el sistema NO aplica el delta de reputación de esa rama en esa segunda vista.
 **Tipo**: Unit | **Bloquea**: Sí
 
-**CA-NPC-012** — Fórmula F2: Rama Inaccesible por Reputación Baja
-**GIVEN** `reputation = -0.8` y existe una rama con `min_reputation = -0.7`, **WHEN** el sistema evalúa el pool de ramas candidatas, **THEN** esa rama queda excluida del pool y no es seleccionable.
+**CA-NPC-010b** — Fórmula F1: Ramas de Reconciliación Siempre Aplican Delta
+**GIVEN** el jugador ya vio la rama `"branch_reconciliation_01"` (marcada como `reconciliation: true`) y la vuelve a ver, **WHEN** el sistema aplica F1, **THEN** el delta de reputación de esa rama SE APLICA independientemente de su presencia en `dialogue_branches_seen`.
+**Tipo**: Unit | **Bloquea**: Sí
+
+**CA-NPC-011** — Fórmula F2: Rama Inaccesible por Reputación Baja (Alias: CA-NPC-012)
+**GIVEN** `reputation = -0.8` y existe una rama con `min_reputation = -0.7`, **WHEN** el sistema construye el pool de candidatas con F2, **THEN** esa rama queda excluida del pool y no es seleccionable.
+**Tipo**: Unit | **Bloquea**: Sí
+
+**CA-NPC-012** — Fórmula F2: Fallback DEFAULT Cuando Todas las Ramas Son Inaccesibles
+**GIVEN** todas las ramas definidas de un NPC tienen `min_reputation` mayor a la reputación actual del jugador (pool vacío), **WHEN** el sistema selecciona rama, **THEN** selecciona la rama `DEFAULT` (definida con `min_reputation=-1.0`) y no se emite error en log.
 **Tipo**: Unit | **Bloquea**: Sí
 
 **CA-NPC-013** — Consecuencias Morales: Registro de Decisión
 **GIVEN** el jugador está en una rama con punto de decisión moral y elige una opción marcada como "oscura", **WHEN** confirma la elección, **THEN** el sistema registra `player_choices[decision_id] = {value, act, timestamp, conscious: true}` y emite `decision_made(npc_id, decision_id, choice)` hacia Progresión Narrativa y Seguimiento Moral.
 **Tipo**: Integration | **Bloquea**: Sí
 
-**CA-NPC-014** — Interacción Forzada: Interrumpe Interacción Opcional en Progreso
-**GIVEN** el jugador está en estado `INTERACTING` con un NPC opcional y el sistema dispara una interacción forzada, **WHEN** se activa la interacción forzada, **THEN** la interacción opcional se aborta, la rama parcial NO queda registrada en `dialogue_branches_seen`, el delta de reputación de esa rama NO se aplica, y la interacción forzada inicia correctamente.
+**CA-NPC-014a** — Interacción Forzada: Estado Post-Abort Limpio
+**GIVEN** el jugador está en estado `INTERACTING` con NPC_A (opcional) y el sistema dispara interacción forzada con NPC_B, **WHEN** se activa la interacción forzada, **THEN** el estado transiciona de `INTERACTING` a `INACTIVE` (abort limpio) antes de iniciar el nuevo diálogo forzado con NPC_B.
+**Tipo**: Integration | **Bloquea**: Sí
+
+**CA-NPC-014b** — Interacción Forzada: Rama Parcial No Registrada
+**GIVEN** la interacción con NPC_A fue abortada (CA-NPC-014a), **WHEN** se consulta `world_state.npc_encounters[NPC_A_id].dialogue_branches_seen`, **THEN** la rama abortada NO aparece en el array.
+**Tipo**: Integration | **Bloquea**: Sí
+
+**CA-NPC-014c** — Interacción Forzada: Delta No Aplicado
+**GIVEN** la interacción con NPC_A fue abortada (CA-NPC-014a), **WHEN** se consulta `world_state.npc_encounters[NPC_A_id].reputation`, **THEN** el valor es idéntico al que tenía antes de iniciar el diálogo abortado.
+**Tipo**: Integration | **Bloquea**: Sí
+
+**CA-NPC-014d** — Interacción Forzada: Diálogo Forzado Inicia Correctamente
+**GIVEN** la interacción con NPC_A fue abortada (CA-NPC-014a), **WHEN** se inicializa el diálogo con NPC_B, **THEN** el estado es `INTERACTING` con NPC_B, se muestra la rama de momento narrativo fijo asignada, e input del jugador queda bloqueado.
 **Tipo**: Integration | **Bloquea**: Sí
 
 **CA-NPC-015** — Dos Areas2D Simultáneas: Solo una Interacción Activa
@@ -515,7 +632,37 @@ Esto crea ritmo narrativo sin interrumpir la inmersión.
 
 ---
 
-**Nota para implementación**: Los ACs no incluidos (E1 — NPC muerto, E4 — pausa durante diálogo) quedan documentados como pendientes: E1 se cubre con smoke check visual (no AC de lógica), y E4 se traslada a GDD #21 (Sistema de Pausa) cuando ese sistema sea diseñado.
+**CA-NPC-016** — E6: Rama Vacía — Fallback Sin Crash
+**GIVEN** una rama definida tiene `text == ""` o `text == null` (contenido vacío o malformado), **WHEN** el sistema intenta mostrarla, **THEN** emite `WARN: "Branch [branch_id] is empty"` en log, muestra el texto `"…"` en la UI, cuenta la rama como vista en `dialogue_branches_seen`, y aplica su delta de reputación normalmente.
+**Tipo**: Unit | **Bloquea**: Sí
+
+**CA-NPC-017** — E7: NPC Sin Ramas — Error Controlado Sin Crash
+**GIVEN** un NPC está en `world_state.npc_encounters` pero no tiene ninguna rama de diálogo definida, **WHEN** el jugador activa interacción con [E], **THEN** el sistema emite `ERROR: "NPC [npc_id] has no dialogue branches defined"` en log, muestra `"El NPC permanece en silencio."`, no modifica `dialogue_branches_seen` ni aplica delta, y el estado regresa a `INACTIVE`.
+**Tipo**: Unit | **Bloquea**: Sí
+
+**CA-NPC-018** — Transición DONE → INACTIVE
+**GIVEN** el sistema está en estado `DONE` (acaba de emitir `interaccion_completada(npc_id)`), **WHEN** el procesamiento de la señal completa, **THEN** el estado transiciona automáticamente a `INACTIVE` y el NPC queda disponible para una nueva interacción con [E].
+**Tipo**: Unit | **Bloquea**: Sí
+
+**CA-NPC-019** — Histéresis de Umbral: Tier Ascendente Requiere noble_streak ≥ 2
+**GIVEN** un NPC con `reputation = 0.49` (justo debajo del umbral warm) y `noble_streak = 1` (una sola interacción noble), **WHEN** el jugador completa una segunda rama noble (+0.15) elevando `reputation` a 0.64, **THEN** el tier visual asciende a `warm` (porque `noble_streak ≥ 2` Y reputación supera el umbral) y se emite `reputation_tier_changed(npc_id, "neutral", "warm")`.
+**Tipo**: Unit | **Bloquea**: Sí
+
+**CA-NPC-020** — F3: Reputación Inicial Penalizada con Edrick Corrupto
+**GIVEN** `world_state.corruption_level = 0.7` (sobre `CORRUPTION_THRESHOLD_FOR_PENALTY = 0.5`) y un NPC con `met = false`, **WHEN** el sistema inicializa la conversación (paso 2 de R2), **THEN** `npc_encounters[npc_id].reputation` se establece a `−0.2` (no 0.0) y `met` se actualiza a `true`.
+**Tipo**: Unit | **Bloquea**: Sí
+
+**CA-NPC-022** — Smoke Check de Contenido: Ramas Hostile/Warm por NPC Recurrente
+**GIVEN** todos los archivos de contenido de NPC están cargados, **WHEN** se ejecuta la validación de contenido (pipeline de CI o inicio del juego en modo debug), **THEN** para cada NPC marcado como recurrente en `npc_encounters`, existe al menos 1 rama con `branch.type == "hostile"` o `"dark"` Y al menos 1 rama con `branch.type == "warm"` o `"allied"` — o bien el sistema emite `ERROR: "NPC [npc_id] missing hostile or warm branches"` en log.
+**Tipo**: Config/Data | **Bloquea**: No (Advisory — smoke check)
+
+**CA-NPC-023** — E8: Input Ignorado Durante Ventana de Restore de Interacción Forzada
+**GIVEN** el sistema ha abortado una interacción opcional y se encuentra en la ventana de restore (0 < t < `INTERACTION_ABORT_RESTORE_DELAY`), **WHEN** el jugador presiona [E] durante esa ventana, **THEN** ningún diálogo se activa — ni con el NPC abortado ni con ningún otro NPC en rango — y el estado permanece en `INACTIVE` hasta que expire la ventana.
+**Tipo**: Integration | **Bloquea**: Sí
+
+---
+
+**Nota para implementación**: CA-NPC-001 a CA-NPC-023 (26 ACs, incluyendo 009b, 010b, 014a-d) cubren el ciclo completo de la máquina de estados, edge cases E1-E8, histéresis de umbral (CA-NPC-019), reputación inicial por corrupción (CA-NPC-020), y smoke checks de contenido (CA-NPC-022). E1 se cubre con smoke check visual (no AC de lógica). E4 se traslada a GDD #21 (Sistema de Pausa). V1-V5, A1-A4, UI1-UI8 requieren evidencia visual/manual en `production/qa/evidence/` antes de que el sprint sea marcado Done.
 
 ---
 
@@ -530,3 +677,4 @@ Esto crea ritmo narrativo sin interrumpir la inmersión.
 | **¿Localization strategy para diálogos?** | Cómo se manejan strings de diálogo en otros idiomas. ¿CSV, sistema interno, herramienta tercera (Crowdin, etc.)? | Localization Lead | Diferido a Pre-Production |
 | **¿Pueden los NPCs morir en el MVP?** | Actualmente soportado (E1, R5). ¿Hay contenido narrativo donde esto ocurra, o es solo mechanical? | Narrative Director | Diferido |
 | **¿Audio leitmotivos para cada NPC?** | A1 propone leitmotivo en música de diálogo. ¿Presupuesto para ~5-7 leitmotivos únicos? | Audio Director | Diferido |
+| **¿El gato/hermano tiene entradas en npc_encounters?** | El gato es el compañero principal de Edrick y debería ser el NPC más emotivamente relevante del sistema. Actualmente no está en `npc_encounters` — está fuera del sistema de moral mirrors completamente. Decide si entra en MVP o se diseña como sistema aparte en un GDD posterior. | Narrative Director + Game Designer | Abierto |
