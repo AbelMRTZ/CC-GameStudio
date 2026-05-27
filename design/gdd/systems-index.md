@@ -24,7 +24,7 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 | 5 | Sistema de Audio | Audio | MVP | Aprobado | [sistema-audio.md](sistema-audio.md) | — |
 | 6 | Combate en Tiempo Real | Gameplay | MVP | Aprobado | [combate-tiempo-real.md](combate-tiempo-real.md) | Movimiento, Salud/Daño, Base de Datos de Demonios |
 | 7 | IA de Enemigos (inferred) | Gameplay | MVP | Aprobado | [ia-enemigos.md](ia-enemigos.md) | Movimiento, Salud/Daño |
-| 8 | Exploración del Mundo | Gameplay | MVP | Diseñado | [exploracion-del-mundo.md](exploracion-del-mundo.md) | Movimiento, Estado del Mundo |
+| 8 | Exploración del Mundo | Gameplay | MVP | Aprobado | [exploracion-del-mundo.md](exploracion-del-mundo.md) | Movimiento, Estado del Mundo |
 | 9 | Cámara (inferred) | Core | MVP | No Iniciado | — | Movimiento, Exploración |
 | 10 | Loadout & Build Management | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios |
 | 11 | Motor de Sinergias | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios, Loadout |
