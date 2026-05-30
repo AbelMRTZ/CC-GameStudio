@@ -1,287 +1,99 @@
-# Sesión Activa: design-review + REVISION GDD #9 Cámara — COMPLETO
+# Sesión Activa: GDD #13 Vinculación de Demonios — DISEÑADO ✅
 
-**Tarea**: `/design-review design/gdd/camara.md` → Revisión adversarial + revision fixes aplicados
-**Estado**: ✅ REVISIONS COMPLETE — Listo para re-review
-**Archivo**: design/gdd/camara.md
-**Modo de revisión**: full (4 especialistas + reescrituras iterativas)
-
----
-
-## SESIÓN 1/4: Arquitectura + Player Fantasy (2026-05-27)
-
-### Decisiones Arquitectónicas Cristalizadas
-
-| Decisión | Opción | Rationale |
-|----------|--------|-----------|
-| Suavizado | (A) Lerp manual en _process | MVP necesita F3 dinámico. Predecible, debuggeable. Deshabilitar position_smoothing_enabled nativo |
-| Player Fantasy | (B) Emergente, no dirigida | Follow basta para mayoría. Anchors en momentos CLAVE (5-8 por zona), no 80%+. Escalable para dev solitario |
-| Señales globales | (A) EventBus Autoload | Desacoplado. Requiere nuevo ADR arquitectónico |
-| MVP Scope | Reino 1 + narrativos | 4-6 semanas realista. Exploración + combate + algunos anchors cinematográficos |
-
-### Secciones Reescritas (9 de 11)
-
-✅ **Overview** — Especifica lerp manual, desactiva Camera2D.limit_*  
-✅ **Player Fantasy** — "Composición emergente del movimiento natural" (no "cada plano dirigido")  
-✅ **R2 — Follow Suave** — Especifica lerp manual con código Godot, elimina position_smoothing nativo  
-✅ **R4 — Límites** — Límites locales, no asignados a Camera2D.limit_* (evita double-clamping)  
-✅ **Interactions** — Añade EventBus, explicita GDD #6 como upstream  
-✅ **Dependencies** — GDD #6 ahora declarado explícitamente  
-✅ **Tuning Knobs** — Elimina `look_ahead_reset_time` fantasma, añade `lerp_delta_clamp_max`  
-✅ **F5 — Posición Final** — Añade guardia zoom > 0.01, implementa centrado zona pequeña  
-✅ **E1 — Pivote** — Actualiza para referirse a lerp manual  
-
-❌ **Pendientes (Sesión 2)**:  
-- F1, F2, F3 (refactor de semántica)
-- E2–E7 (actualizar post-arquitectura)
-- Rewrite completo de ACs
+**Tarea completada**: `design/gdd/vinculacion-demonios.md` — todas las secciones escritas y aprobadas.
+**Estado**: GDD #13 completo. Pendiente `/design-review` en sesión fresca para confirmar aprobación.
+**Archivo**: design/gdd/vinculacion-demonios.md
+**Fecha**: 2026-05-29
 
 ---
 
-## SESIÓN 2/4 COMPLETADA — 2026-05-27 (Fórmulas + Acceptance Criteria)
+## Resumen de GDD #13
 
-### Secciones Reescritas en Sesión 2
+Todas las 10 secciones aprobadas y escritas al archivo:
 
-✅ **F1 — Posición Objetivo** — Clarifica dir_input (discreto) vs velocity (continuo). Nota sobre intención.  
-✅ **F2 — Look-Ahead Dinámico** — Especifica convergencia real (~0.57s al 95%, no ~0.3s). Tiempos documentados.  
-✅ **F3 — Transición de Modo** — Clarifica continuidad al interrumpir (from = valor actual). Código GDScript.  
-✅ **Acceptance Criteria** — Reescritos 10 ACs + 5 nuevos para edge cases. Total 15 ACs testables.
-
-### Acceptance Criteria (Ahora 15 vs 10 originales)
-
-**Testables (reescritos):**
-- AC 1: Suavizado de Posición (delta ≤ 12 px/frame)
-- AC 2: Look-Ahead en Exploración (0–50 px, 34 frames)
-- AC 3: Look-Ahead en Combate (50→20 px en 0.4s) ✓
-- AC 4: Pivote Suave (8–12 frames transición)
-- AC 5: Límites de Zona ✓
-- AC 6: Zona Pequeña se Centra ✓
-- AC 7A: Entrada a Anchor (30 px, 1.1 zoom en 0.5s)
-- AC 7B: Salida de Anchor (simetría confirmada)
-- AC 8: Transición Zona sin Glitch (secuencia correcta)
-- AC 9A: Cinemática Inicio/Fin (estados + interpolación)
-- AC 9B: CINEMATIC bloqueado desde TRANSITION
-- AC 9C: Estado post-cinemática = FOLLOW_EXPLORE
-- AC 10: Input Responsivo (≤ 1 frame = 16.6ms)
-
-**Nuevos para Edge Cases:**
-- AC 11: Transición Zona Durante Combate (E3)
-- AC 12: Dos Anchors Superpuestos (E4)
-- AC 13: Dash 400 px/s (E5)
-- AC 14: Zona Cargando Lentamente (E6)
-- AC 15: Zoom Extremo + Offset Grande (E7)
-
-### Problemas Bloqueantes (Sesión 1-2): Resueltos
-
-| Problema | Status |
-|----------|--------|
-| 1. Suavizado nativo vs manual | ✅ DECIDIDO: lerp manual |
-| 2. Double-clamping F5 + limit_* | ✅ DECIDIDO: desactivar limit_* |
-| 3. zoom type float vs Vector2 | ✅ DOCUMENTADO en F4 |
-| 4. Guardia división por cero F5 | ✅ IMPLEMENTADA |
-| 5. Centrado zona pequeña F5 | ✅ IMPLEMENTADO |
-| 6. Player Fantasy contradictoria | ✅ REDEFINIDA (emergente) |
-| 7. `look_ahead_reset_time` fantasma | ✅ ELIMINADO |
-| 8. F5 incompleta | ✅ COMPLETADA |
-| 9. F1+F2 inconsistencia (against-wall) | ✅ REESCRITA F1 (dir_input ≠ velocity) |
-| 10. F2 documentación falsa | ✅ REESCRITA F2 (0.57s real) |
-| 11. GDD #6 ausente Dependencies | ✅ AÑADIDO explícitamente |
-| 12. 7/10 ACs no testables | ✅ REESCRITOS 10, +5 nuevos |
-| 13. 5 edge cases sin AC | ✅ CREADOS AC 11–15 |
-
-### Problemas PENDIENTES para Sesión 3-4
-
-- [ ] E2–E7 Edge Cases (actualizar descripciones post-arquitectura)
-- [ ] Crear ADRs (Señales EventBus, Suavizado Manual)
-- [ ] Open Questions (actualizar si aplica post-revisión)
-- [ ] Verificar bidireccionalidad Dependencies (¿GDD #6, #8 mencionan cámara?)
+| Sección | Estado |
+|---------|--------|
+| §1 Visión General | ✅ Escrita |
+| §2 Fantasy del Jugador | ✅ Escrita |
+| §3 Diseño Detallado (Reglas + Estados + Interacciones) | ✅ Escrita |
+| §4 Fórmulas (F-VD-01 a F-VD-03) | ✅ Escrita |
+| §5 Casos Extremos (E1–E6) | ✅ Escrita |
+| §6 Dependencias (upstream/downstream/señales) | ✅ Escrita |
+| §7 Parámetros de Ajuste | ✅ Escrita |
+| §8 Requisitos Visuales y de Audio | ✅ Escrita |
+| §9 Criterios de Aceptación (AC-VD-001–033) | ✅ Escrita |
+| §10 Preguntas Abiertas (P-VD-01–05) | ✅ Escrita |
 
 ---
 
-## SESIÓN 3/4 COMPLETADA — 2026-05-27 (ADRs + Bidireccionalidad)
+## Decisiones clave tomadas (GDD #13)
 
-### A. Edge Cases (E2–E7) — VERIFICADAS ✅
-E2–E7 ya están actualizadas en el archivo camara.md y reflejan arquitectura lerp manual + centrado zona pequeña en F5.
-- E2 ✅: Zona pequeña → centrado automático (F5 con guardia `max_x < min_x`)
-- E3 ✅: Transición zona durante combate → estado vuelve a FOLLOW_EXPLORE post-transición
-- E4 ✅: Dos anchors superpuestos → último entrado es activo
-- E5 ✅: Dash 400 px/s → look-ahead clampeado a máximo (speed_ratio)
-- E6 ✅: Zona cargando lenta → cámara espera `zona_transition_ended`
-- E7 ✅: Zoom extremo + offset grande → F5 centra si `max < min`
-
-### B. ADRs Creados ✅
-1. **ADR-001: Manual Camera Smoothing vs Native Position Smoothing** 
-   - Archivo: docs/architecture/adr-001-manual-camera-smoothing.md
-   - Decisión: lerp manual en _process
-   - Rationale: permite F3 dinámico (smoothing_speed interpolable)
-   - Implicaciones: DESACTIVAR `position_smoothing_enabled` en Camera2D node
-
-2. **ADR-002: EventBus Autoload for Global Signal Distribution**
-   - Archivo: docs/architecture/adr-002-eventbus-global-signals.md
-   - Decisión: Autoload EventBus para signals globales
-   - Señales iniciales: `combat_started`, `combat_ended`, `zona_transition_started`, `zona_transition_ended`
-   - Implicaciones: requiere nuevo Autoload en proyecto + actualizar GDD #6
-
-### C. Open Questions ✅
-Las 3 open questions permanecen válidas (esperando clarificación de GDD #8, #17, #6):
-1. ¿Parallax automático vs definido por zona?
-2. ¿Cinemáticas pueden ignorar límites de zona?
-3. ¿Feedback visual transición combate↔exploración?
-
-### D. Bidireccionalidad Dependencies ✅
-✅ **GDD #1 (Movimiento)** — menciona: "Cámara — Depende de la posición y velocidad de Edrick para seguimiento suave"
-✅ **GDD #6 (Combate)** — ACTUALIZADO: añadido "Cámara (GDD #9) | Señales de transición de modo: combat_started y combat_ended"
-✅ **GDD #8 (Exploración)** — menciona: "Cámara (#9) | Dura | zone_bounds: Rect2 para definir los límites dentro de los que la cámara puede moverse"
+| Decisión | Resolución |
+|----------|------------|
+| Cómo se obtienen los demonios | SOLO asesinando portadores — regla inmutable. El motivo puede variar. |
+| Excepciones a la regla del asesinato | Solo el Gato — binding voluntario vía narrativa (GDD #16 emite `demon_bound("cat")` directamente) |
+| El Dash demon en el timeline | Culmen dramático del Acto 1, NO tutorial introductorio |
+| Detección de muerte | Señal unificada `portador_murio(portador_id, position)` — emitida por Combate (#6) o NPC (#15) |
+| Tipos de secuencia | "standard" (world freeze + partículas + aura) vs "custom" (CanvasLayer scene separada) |
+| Timing de partículas | Velocidad adaptativa F-VD-03: `distance / PARTICLE_TRAVEL_TIME`, mínimo 100 px/s |
+| Duración total MVP | 2.3s (1.5 + 0.5 + 0.3) |
+| Gato en el sistema | No tiene `portador_id`; este sistema solo corre Registro cuando recibe `demon_bound("cat")` |
+| Muerte simultánea Edrick+portador | Chequeo `edrick_alive` antes de iniciar secuencia — descarta si false |
 
 ---
 
-## Resumen de Progreso
+## Archivos modificados (GDD #13)
 
-| Sesión | Completado | Cambios |
-|--------|-----------|---------|
-| **1/4** | ✅ Arquitectura + Player Fantasy | 9 secciones reescritas |
-| **2/4** | ✅ Fórmulas (F1, F2, F3) + ACs | 10 ACs reescritos + 5 nuevos |
-| **3/4** | ✅ Edge Cases + ADRs + Dependencies | 2 ADRs + 1 GDD actualizado |
-| **4/4** | ⏳ Final Review + Síntesis | `/design-review` (próximo paso) |
-
-**Context Saved**: ~50% disponible para Sesión 4
+- `design/gdd/vinculacion-demonios.md` — GDD #13 completo, Estado: Diseñado
+- `design/gdd/systems-index.md` — GDD #13 "No Iniciado" → "Diseñado", tracker: 14 iniciados, 4 diseñados pendientes revisión
+- `design/registry/entities.yaml` — Añadidos: constantes PARTICLE_TRAVEL_TIME, AURA_FADE_TIME, SILENCE_TIME, BINDING_DURATION, PARTICLE_MIN_SPEED, PARTICLE_COUNT; señales portador_murio, binding_started, demon_bound, binding_sequence_complete
 
 ---
 
-## Secciones Completadas (2026-05-27 — SESIÓN ANTERIOR)
-- [x] Overview — Cámara como ventana del mundo + infraestructura de modo
-- [x] Player Fantasy — "El director que compone cada plano" — belleza dolorosa sin esfuerzo aparente
-- [x] Detailed Design — 6 Core Rules + States/Transitions + Cross-system interactions
-- [x] Formulas — 5 fórmulas completas (F1–F5) con tablas de variables y ejemplos
-- [x] Edge Cases — 7 edge cases cubren cambios rápidos, zonas pequeñas, anchors, dash, cinemáticas
-- [x] Dependencies — Depende de #1 (#1 Movimiento), #8 (#8 Exploración). Dependen: #17 Cinemáticas
-- [x] Tuning Knobs — 10 parámetros ajustables con rangos seguros
-- [x] Acceptance Criteria — 10 criterios testables (sigue suave, look-ahead, combate, límites, anchors, cinemáticas)
-- [x] Visual/Audio Requirements — No VFX/audio específicos (infraestructura transparente)
-- [x] UI Requirements — No UI específica
-- [x] Open Questions — 3 preguntas pendientes de GDD #8, #17, #6
+## Preguntas abiertas de GDD #13
+
+| ID | Pregunta | Urgencia |
+|----|---------|----------|
+| P-VD-01 | Timeout para secuencias custom sin señal `binding_sequence_complete()` | Antes de Alpha |
+| P-VD-02 | Contrato de datos pasados a escenas custom al instanciarlas | Antes de primera escena custom |
+| P-VD-03 | Handoff aura post-binding a GDD #14 (Transformación Visual) | Antes de GDD #14 |
+| P-VD-04 | Re-emisión de `demon_bound("cat")` — duplicar señal o solo registrar | Antes de implementación |
+| P-VD-05 | Portadores únicos — ¿restricción permanente o abierta post-MVP? | Antes de Alpha |
 
 ---
 
-## Decisiones Clave Tomadas
+## Deuda técnica generada (GDD #13)
 
-### Framing de Overview
-- Ambos: infraestructura técnica + impacto narrativo
-- Referencia a que habilita Cinemáticas
-- Control automático (usuario nunca toca la cámara)
-
-### Player Fantasy
-- **Opción elegida**: "El director que compone cada plano" (Candidato C)
-- Belleza dolorosa sin esfuerzo aparente
-- Usa regla de tercios, líneas de fuga, parallax
-- Ancla en catedral con push-in imperceptible del 5%
-
-### Detailed Design
-- Follow con look-ahead horizontal semi-proporcional (50 px exploración, 20 px combate)
-- 4 estados: FOLLOW_EXPLORE, FOLLOW_COMBAT, CINEMATIC, TRANSITION
-- Camera Anchors para composición manual (offset + zoom)
-- Límites de zona via Camera2D.limit_*
-
-### Formulas
-- F1: Posición objetivo = Edrick.pos + (dir × look-ahead)
-- F2: Look-ahead semi-proporcional a velocidad (cresce suavemente de 0 a 50 px)
-- F3: Transición de modo con lerp de 0.4s
-- F4: Anchor blend interpola offset + zoom
-- F5: Clampea final respetando límites de zona
+- **AC-VD-028 depende de GDD #12**: GDD #12 debe documentar que el autosave no ocurre durante SEQUENCE_STANDARD — verificar en `/design-review design/gdd/guardado-y-carga.md`
+- **GDD #14 boundary**: La frontera de ownership del aura entre GDD #13 y GDD #14 debe resolverse al diseñar GDD #14 (Transformación Visual de Edrick)
 
 ---
 
-## Verificación de Cross-Sistema
+## Estado del proyecto
 
-✅ **Registry conflicts**: Ninguno. Las constantes de cámara son nuevas:
-- look_ahead_explore = 50 px
-- look_ahead_combat = 20 px
-- smoothing_speed_explore = 6.0
-- smoothing_speed_combat = 9.0
-- combat_transition_time = 0.4 s
-- Candidatos para añadir al registry en siguiente sesión
+| Sistema | Estado |
+|---------|--------|
+| GDD #1-9, #15 | ✅ Aprobados (10 GDDs) |
+| GDD #10 Loadout & Build Management | 🔄 Diseñado — pendiente re-`/design-review` (señal extendida) |
+| GDD #11 Motor de Sinergias | 🔄 Diseñado — pendiente `/design-review` |
+| GDD #12 Guardado y Carga | 🔄 Diseñado — pendiente `/design-review` |
+| GDD #13 Vinculación de Demonios | 🔄 Diseñado — pendiente `/design-review` |
+| GDD #14-26 (excl. #15) | ⬜ No iniciados |
 
-✅ **Dependencias bidireccionales confirmadas**:
-- #1 Movimiento menciona: "Cámara — Depende de la posición y velocidad de Edrick para seguimiento suave" ✓
-- #8 Exploración menciona: "Dependen de este sistema: Cámara (#9)" ✓
-
----
-
-## GDDs MVP Completados Hasta Ahora
-1. ✅ Movimiento y Físicas 2D (#1) — Aprobado
-2. ✅ Salud y Daño (#2) — Aprobado
-3. ✅ Base de Datos de Demonios (#3) — Aprobado
-4. ✅ Estado del Mundo (#4) — Aprobado
-5. ✅ Sistema de Audio (#5) — Aprobado
-6. ✅ Combate en Tiempo Real (#6) — Aprobado
-7. ✅ IA de Enemigos (#7) — Aprobado
-8. ✅ Exploración del Mundo (#8) — Aprobado (pending design-review)
-9. ✅ **NUEVO: Cámara (#9) — Diseñado** (pending design-review)
-10. ⏳ Loadout & Build Management (#10) — No Iniciado
-11. ⏳ Motor de Sinergias (#11) — No Iniciado
-... (21 MVP systems total)
+**GDDs aprobados**: 10 / 26 sistemas totales
+**GDDs diseñados (pendiente revisión)**: 4 (GDD #10, #11, #12, #13)
 
 ---
 
-## Próximos Pasos Recomendados
+## Próximos pasos recomendados
 
-**Inmediato (esta sesión o próxima)**:
-- [ ] Ejecutar `/design-review design/gdd/camara.md` en **NUEVA sesión** (no en la actual) para validación independiente
-- [ ] Si design-review da PASS: cambiar systems-index status a "Aprobado"
-- [ ] Ejecutar `/consistency-check` para verificar que los valores de cámara no conflictúan con otros GDDs
-
-**Después**:
-- [ ] Siguiente sistema en orden: GDD #10 (Loadout & Build Management) — depende de #3, sin bloqueantes
-- [ ] O: GDD #11 (Motor de Sinergias) — depende de #3 y #10
-- [ ] Cuando hayan ~15 GDDs MVP completados: ejecutar `/review-all-gdds` (holistic cross-check)
-
----
-
-## Estadísticas de Esta Sesión
-
-- **Tiempo total**: ~2 horas (sesión + corte por contexto)
-- **Secciones diseñadas**: 11 (8 requeridas + 3 opcionales)
-- **Fórmulas**: 5 completas con tablas + ejemplos
-- **Edge cases**: 7
-- **Acceptance criteria**: 10
-- **Open questions**: 3
-- **Archivos modificados**: camara.md (creado), systems-index.md (actualizado), session-state.md (actualizado)
-- **Contexto utilizado**: ~98% (sesión cortada, reanudada)
-
----
-
-## Decisiones Pendientes (No Bloqueantes)
-
-1. ¿Parallax automático vs definido por zona? (esperar GDD #8 clarificación)
-2. ¿Cinemáticas pueden ignorar límites de zona? (esperar GDD #17)
-3. ¿Feedback visual de transición combate↔exploración? (esperar GDD #6)
-
----
-
----
-
-## SESIÓN 4/4: PRÓXIMO PASO
-
-**Estado actual**: ✅ LISTO PARA `/design-review`
-
-El GDD #9 (Cámara) es:
-- ✅ Completo: 8 secciones requeridas + 3 opcionales
-- ✅ Técnicamente correcto: fórmulas verificadas, edge cases documentados, ACs testables
-- ✅ Alineado con pilares: Pilar 1 (Narrativa Cinematográfica) + Pilar 3 (Mundo Hermoso)
-- ✅ Dependencias bidireccionales actualizadas (GDD #1, #6, #8)
-- ✅ Arquitectura documentada (ADR-001, ADR-002)
-- ✅ Validable: 15 acceptance criteria con métricas claras
-
-**Archivos creados/modificados en Sesiones 1-3:**
-- design/gdd/camara.md (creado)
-- design/gdd/sistemas-index.md (actualizado)
-- design/gdd/combate-tiempo-real.md (actualizado: añadido Camera en dependientes)
-- docs/architecture/adr-001-manual-camera-smoothing.md (creado)
-- docs/architecture/adr-002-eventbus-global-signals.md (creado)
-- production/session-state/active.md (actualizado)
-
-**Próximo paso recomendado:**
 ```bash
-/design-review design/gdd/camara.md
-```
+# Opción A — Revisar los GDDs pendientes (orden recomendado):
+/design-review design/gdd/guardado-y-carga.md            # GDD #12 — el más antiguo sin revisar
+/design-review design/gdd/loadout-build-management.md   # GDD #10 — señal extendida pendiente
+/design-review design/gdd/motor-sinergias.md             # GDD #11 — recién diseñado
+/design-review design/gdd/vinculacion-demonios.md        # GDD #13 — recién diseñado
 
-Este ejecutará una revisión adversarial completa del GDD por especialistas (resolución de conflictos, validación de fórmulas, consistency checks, game design theory). Si PASS: cambiar systems-index status a "Aprobado" y proceder a GDD #10 (Loadout & Build Management).
+# Opción B — Continuar diseñando el siguiente sistema:
+/design-system transformacion-visual-edrick              # GDD #14 — depende de Loadout + Base de Datos
+```

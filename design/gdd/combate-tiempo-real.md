@@ -127,14 +127,16 @@ mod_atacante = (∑ demon_modifier_i) × synergy_multiplier
 ```
 
 Donde:
-- `demon_modifier_i` = modificador de daño del i-ésimo demonio equipado (p.ej. Fuego +0.20, Arcano +0.25)
-- `∑` = suma de todos los demonios activos en el ataque
-- `synergy_multiplier` = multiplicador por sinergia (p.ej. Dash+Fuego = ×1.15, sin sinergia = ×1.00)
+- `demon_modifier_i` = `daño_bonus` del i-ésimo demonio equipado (p.ej. Fuego +0.15, Arcano +0.20; valores canónicos en GDD #3 §3.3)
+- `∑` = suma de todos los demonios equipados (no solo los usados en el ataque — todos los activos contribuyen su `daño_bonus`)
+- `synergy_multiplier` = `SynergyEngine.get_synergy_multiplier()` — **siempre 1.00 en MVP** (constante definida en GDD #11 F-SE-06). Los efectos especiales de sinergia (amplificación de quemadura de Arcano, DoT de estelas de Dash, etc.) se acceden individualmente a través de la Pull API de GDD #11 Motor de Sinergias y se aplican en el cálculo específico de cada efecto, no a través de este multiplicador global.
 
-Ejemplo:
-- Edrick tiene equipados: Fuego (+0.20), Dash (+0.10), Arcano (+0.25)
-- Ataca con Fuego: `mod = (0.20 + 0.25) × 1.00 = 0.45` (Arcano amplifica todos)
-- Ataca con Dash+Fuego (sinergia activa): `mod = (0.10 + 0.20 + 0.25) × 1.15 = 0.6725` (≈ +67% daño)
+Ejemplo (valores corregidos de GDD #3 §3.3):
+- Edrick tiene equipados: Fuego (+0.15), Arcano (+0.20)
+- Ataca Ligero: `mod_atacante = (0.15 + 0.20) × 1.00 = 0.35`
+- Sinergia Arcano+Fuego activa: Combate lee `SynergyEngine.get_synergy_effect("arcano_fuego", "quemadura_rate_multiplier") = 1.25` y aplica el factor al DoT de quemadura en el siguiente tick de daño — **no al `mod_atacante` del golpe base**
+
+> **Nota cross-GDD**: El ejemplo anterior con `×1.15` para Dash+Fuego en esta fórmula era incorrecto y ha sido eliminado. Los efectos de sinergia no se expresan como multiplicadores globales de `mod_atacante`. Para el orden de operaciones en efectos de sinergia apilados (ej: Arcano+Dash+Fuego+Hielo), ver F-SE-04 en GDD #11 Motor de Sinergias.
 
 **Fórmula 4.2: Daño Final Infligido**
 

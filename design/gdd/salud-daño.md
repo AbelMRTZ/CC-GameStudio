@@ -2,12 +2,12 @@
 
 > **Estado**: Aprobado
 > **Creado**: 2026-05-24
-> **Última Actualización**: 2026-05-24
-> **Aprobación**: Completado en sesión de diseño
+> **Última Actualización**: 2026-05-29
+> **Aprobación**: Completado en sesión de diseño (§3.9 añadido 2026-05-29)
 > **Sistema**: Salud y Daño
 > **Milestone**: MVP — Foundation Layer
 > **Depende de**: — (sin dependencias)
-> **Dependen de este sistema**: Combate en Tiempo Real, IA de Enemigos
+> **Dependen de este sistema**: Combate en Tiempo Real, IA de Enemigos, Vinculación de Demonios (#13)
 
 ---
 
@@ -134,6 +134,7 @@ Cuando Edrick llega a 0 HP:
 4. **Duración:** La cutscena dura ~3-5 segundos
 5. **Reload:** Después de la cutscena, la escena se recarga desde el último checkpoint guardado
 6. **Estado reset:** Edrick reaparece con HP completo (75 HP) en el checkpoint
+7. **Señal de respawn:** El sistema emite `edrick_respawned()` en el EventBus una vez que Edrick reaparece vivo en el checkpoint — después del reload y del estado reset, antes de devolver el control al jugador. Esta señal es necesaria para sistemas que mantienen estado local vinculado a la vitalidad de Edrick a través de escenas (ver §6.2 — BindingSystem).
 
 **Checkpoints:** Se guardan automáticamente al entrar a nuevas áreas o después de jefes derrotados (definido en Estado del Mundo).
 
@@ -150,6 +151,22 @@ Los enemigos usan el mismo sistema de salud y daño:
 - Cada enemigo tiene su propio HP
 - Tipos de daño se aplican igual (pueden tener resistencias diferentes)
 - Cuando llegan a 0 HP, mueren (se define en IA de Enemigos)
+
+### 3.9 Recuperación de Salud — Santuarios
+
+Edrick recupera HP en **Santuarios**: objetos de nivel fijos colocados por el diseño de niveles. No hay regeneración automática en exploración ni consumibles de curación en MVP.
+
+**Regla 1 — Activación automática**
+Cuando Edrick entra en el radio de un Santuario (`SANCTUARY_RADIUS`, §7), la curación se activa sin ningún input del jugador. Se reproduce una animación/VFX breve y el HP se restaura al instante al valor `HP_máximo` actual.
+
+**Regla 2 — Curación total**
+El HP se restaura siempre a `HP_máximo` actual, incluyendo los bonificadores de demonios e items del build activo en ese momento (provisto por Loadout & Build Management, GDD #10). Se emite señal `health_changed(HP_máximo, delta, "restauracion")` donde `delta = HP_máximo - HP_anterior` (positivo). Si Edrick ya está a `HP_máximo`, no ocurre nada: sin señal, sin animación.
+
+**Regla 3 — Uso ilimitado**
+Los Santuarios no tienen cargas ni cooldown propio. El jugador puede volver a curarse tantas veces como quiera. El único coste es el tiempo de backtracking hasta el Santuario.
+
+**Regla 4 — Placement externo**
+La cantidad y posición de los Santuarios es responsabilidad del diseño de niveles (GDD #8 — Exploración del Mundo). Este sistema define el comportamiento al entrar en el radio; no define cuántos hay ni dónde están.
 
 ---
 
@@ -213,6 +230,9 @@ Si HP_nuevo == 0:
   dispara evento: edrick_died()
   activa cutscena: play_death_cinematic()
   después de cutscena: reload_scene()
+  HP = HP_máximo
+  estado = "alive"
+  dispara evento: edrick_respawned()
 ```
 
 ---
@@ -290,7 +310,33 @@ Si HP_nuevo == 0:
 - Frame 2: Nunca ocurre porque la escena se recargó
 - Si por alguna razón Frame 2 ocurriese: HP ya es 0, y el daño se rechaza (HP ya está muerto)
 
-### 5.8 Muerte Mientras Cutscena de Daño
+### 5.9 Santuario con HP ya al máximo
+
+**Situación**: Edrick entra en el radio de un Santuario con HP = HP_máximo.
+
+**Comportamiento**:
+- No ocurre nada. Sin curación, sin señal `health_changed`, sin animación de curación.
+- Un indicador visual sutil puede mostrar que el Santuario está activo (definido en HUD de Combate, GDD #18), pero no hay mecánica de HP involucrada.
+
+### 5.10 Dos Santuarios con Radios Superpuestos
+
+**Situación**: El diseño de nivel coloca dos Santuarios cuyas áreas de detección se solapan. Edrick entra en ambos radios simultáneamente.
+
+**Comportamiento**:
+- Se aplica una sola curación por frame mediante un flag `healing_applied_this_frame`.
+- El flag se resetea al inicio del siguiente frame.
+- Resultado: Edrick cura al máximo una vez, no dos.
+
+### 5.11 Daño Mortal en el Mismo Frame que Santuario
+
+**Situación**: Edrick recibe un golpe mortal (HP → 0) en el mismo frame en que entra en el radio de un Santuario.
+
+**Comportamiento**:
+- Orden de procesamiento: **daño primero, curación después** dentro del mismo frame.
+- Si el daño lleva HP a 0 → se dispara `edrick_died()` → estado DEAD → la curación del Santuario no se aplica (el sistema de Salud rechaza operaciones cuando `estado == DEAD`).
+- Si el daño NO lleva HP a 0 (aunque lo deje muy bajo) → el Santuario cura normalmente en el mismo frame.
+
+### 5.12 Muerte Mientras Cutscena de Daño
 
 **Situación**: Edrick recibe daño cinematográfico durante una cutscena.
 
@@ -306,7 +352,12 @@ Si HP_nuevo == 0:
 
 ### 6.1 Dependencias de Este Sistema
 
-**Salud y Daño** es Foundation Layer — no depende de ningún otro sistema. Es puro cálculo de daño, sin dependencias externas.
+El núcleo de cálculo de daño (§3.1–3.8) es Foundation Layer — sin dependencias. La mecánica de Santuarios (§3.9) introduce dos dependencias upstream:
+
+| Sistema | Relación | Qué provee |
+|---------|----------|-----------|
+| **Exploración del Mundo** (GDD #8) | Upstream | Define el objeto Santuario y su placement en el mapa. Este sistema consume el radio del objeto pero no sabe nada de su posición concreta. |
+| **Loadout & Build Management** (GDD #10) | Upstream | Provee `HP_máximo` actual (con bonificadores de demonios e items) para calcular la curación total en §3.9 Regla 2. |
 
 ### 6.2 Sistemas que Dependen de Este
 
@@ -314,6 +365,7 @@ Si HP_nuevo == 0:
 - **IA de Enemigos** — Los enemigos usan el mismo sistema de salud y daño; su muerte se dispara cuando HP llega a 0
 - **Movimiento y Físicas 2D** — Knockback del daño es opcional (definido en Combate, no aquí)
 - **HUD de Combate** (GDD #18, futuro) — Leerá `HP_actual` y `HP_max` para renderizar la barra de salud y reaccionar a eventos de daño. Añadido auditoría 2026-05-27 (resuelve BD-02).
+- **Vinculación de Demonios** (GDD #13) — Escucha `edrick_died()` para poner `_edrick_alive = false` (bloquear bindings durante muerte) y `edrick_respawned()` para resetear `_edrick_alive = true` (habilitar bindings tras respawn). BindingSystem es Autoload — sin `edrick_respawned()`, ningún binding sería posible después de la primera muerte de Edrick en la sesión.
 
 ### 6.3 Integración con Otros Sistemas
 
@@ -339,6 +391,7 @@ Todos estos valores deben vivir en un archivo de configuración (ej: `assets/dat
 | `resist_cap_min` | -0.5 | -0.7 a -0.3 | Vulnerabilidad máxima permitida | Cap negativo (vulnerabilidad) balancea resistencias |
 | `hp_jefe_multiplicador` | 2.5 | 1.5–5.0 | HP de jefes vs enemigos normales | Multiplicador aplicado al HP base (ej: jefe = 75 × 2.5 = 187.5 HP) |
 | `daño_cutscena_muerte` | variable | — | Daño en cinemática de muerte | Definido por Cinemáticas, no aquí |
+| `SANCTUARY_RADIUS` | 64 px | 32–128 px | Radio de detección del Santuario. Mayor = más fácil de activar sin precisión. Ver §3.9. |
 
 **Fichero de configuración recomendado**: `assets/data/health_config.gd` (Resource o script con constantes exportables).
 
@@ -383,6 +436,7 @@ Todos estos valores deben vivir en un archivo de configuración (ej: `assets/dat
 - [ ] **AC 5.2**: Cutscena de muerte se dispara. Verificar: al morir → cinemática de muerte se ejecuta (~3-5s).
 - [ ] **AC 5.3**: Escena se recarga después de muerte. Verificar: esperar a que cutscena termine → nivel recarga, Edrick reaparece en checkpoint.
 - [ ] **AC 5.4**: Edrick respawns con HP completo. Verificar: después de reload, HP = 75 (o máximo).
+- [ ] **AC 5.5**: `edrick_respawned()` se emite tras el respawn. Verificar: listener de prueba suscrito a `edrick_respawned` — se recibe exactamente una vez por muerte, después de que `HP = HP_máximo` y `estado = "alive"`. No se emite antes del reload ni durante la cutscena.
 
 ### 8.6 Múltiples Daños
 
@@ -396,3 +450,13 @@ Todos estos valores deben vivir en un archivo de configuración (ej: `assets/dat
 - [ ] **AC 7.2**: Items se aplican correctamente. Verificar: encontrar item +resist → resistencia se suma al total.
 - [ ] **AC 7.3**: Cambiar build actualiza resistencias. Verificar: cambiar demonio mid-combate → nuevas resistencias aplican al siguiente daño.
 - [ ] **AC 7.4**: No hay glitches de HP. Verificar: HP es siempre un entero entre 0 e HP_máximo, nunca NaN o infinito.
+
+### 8.8 Santuarios — Recuperación de Salud
+
+- [ ] **AC-S1**: Al entrar en el radio de un Santuario con HP < HP_máximo, HP se restaura a HP_máximo inmediatamente. Verificar: Edrick a 30 HP entra en Santuario → HP = 75 (o HP_máximo con bonificadores).
+- [ ] **AC-S2**: La curación incluye bonificadores de demonios e items. Verificar: Edrick con demonio que da +25 HP_máximo (HP_máximo = 100) entra en Santuario con 50 HP → HP = 100.
+- [ ] **AC-S3**: No se requiere ningún input del jugador para activar la curación. Verificar: entrar en el radio sin pulsar ningún botón → curación ocurre.
+- [ ] **AC-S4**: Al entrar con HP ya al máximo, no se emite `health_changed` y no ocurre animación de curación. Verificar: Edrick a HP_máximo entra en Santuario → señal no emitida, HP sin cambio.
+- [ ] **AC-S5**: El mismo Santuario puede curar múltiples veces. Verificar: curar, salir del radio, recibir daño, volver → cura de nuevo correctamente.
+- [ ] **AC-S6**: `health_changed` se emite con `tipo = "restauracion"` cuando ocurre curación. Verificar: inspeccionar payload de señal tras curación en Santuario.
+- [ ] **AC-S7**: Si Edrick recibe daño mortal en el mismo frame que entra en el radio del Santuario, prevalece DEAD. Verificar: golpe letal simultáneo con entrada al Santuario → `edrick_died()` se emite, HP permanece en 0, no se restaura.

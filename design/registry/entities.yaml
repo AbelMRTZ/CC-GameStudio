@@ -24,7 +24,7 @@
 #             /architecture-review (data structure and interface validation)
 
 version: 1
-last_updated: "2026-05-26"
+last_updated: "2026-05-29"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 
@@ -168,6 +168,37 @@ formulas:
     added: "2026-05-26"
     revised: ""
 
+  - name: hp_max_formula
+    status: active
+    source: design/gdd/loadout-build-management.md
+    referenced_by:
+      - design/gdd/loadout-build-management.md
+    expression: "clamp(HP_BASE + ∑ hp_bonus_i, HP_FLOOR, HP_CEILING)"
+    variables:
+      - HP_BASE        # 75 HP (constante, source: salud-daño.md)
+      - hp_bonus_i     # bonus de HP del i-ésimo demonio equipado (puede ser negativo, source: base-datos-demonios.md)
+      - HP_FLOOR       # 1 HP (constante, source: loadout-build-management.md)
+      - HP_CEILING     # 125 HP (constante, source: loadout-build-management.md)
+    output_range: [1, 125]
+    notes: "HP máximo de Edrick con el loadout activo. Recalculado al finalizar la animación de swap (SWAP_ANIM_DURATION). Gato excluido de la sumatoria (hp_bonus implícito = 0)."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: slot_capacity_formula
+    status: active
+    source: design/gdd/loadout-build-management.md
+    referenced_by:
+      - design/gdd/loadout-build-management.md
+    expression: "clamp(SLOTS_BASE + sellos_vinculo_encontrados, SLOTS_BASE, SLOTS_MAX)"
+    variables:
+      - SLOTS_BASE                  # 2 (constante MVP, source: loadout-build-management.md)
+      - sellos_vinculo_encontrados  # int — número de Sellos de Vínculo recogidos en el mundo (0 a 3 con SLOTS_MAX=5)
+      - SLOTS_MAX                   # 5 (constante, source: loadout-build-management.md)
+    output_range: [2, 5]
+    notes: "Número de slots de demonio disponibles. Los Sellos de Vínculo son items físicos escondidos en los reinos (3 en visión completa). Slot de Gato NO cuenta en este total."
+    added: "2026-05-28"
+    revised: ""
+
   - name: knockback_decay_formula
     status: active
     source: design/gdd/combate-tiempo-real.md
@@ -193,9 +224,10 @@ constants:
       - design/gdd/salud-daño.md
       - design/gdd/base-datos-demonios.md
       - design/gdd/sistema-audio.md
+      - design/gdd/loadout-build-management.md
     value: 75
     unit: HP
-    notes: "HP inicial de Edrick. Modificable por demonios (+/- hp_bonus). Visión reduce a 70 (-5)."
+    notes: "HP inicial de Edrick. Modificable por demonios (+/- hp_bonus). Visión reduce a 70 (-5). Arcano reduce a 72 (-3). Arcano+Visión combinados: 67 (-8; o -9 con sinergia arcano_vision activa)."
     added: "2026-05-24"
     revised: ""
 
@@ -400,6 +432,237 @@ constants:
     added: "2026-05-26"
     revised: ""
 
+  - name: SWAP_ANIM_DURATION
+    status: active
+    source: design/gdd/loadout-build-management.md
+    referenced_by:
+      - design/gdd/loadout-build-management.md
+    value: 0.8
+    unit: seconds
+    notes: "Duración de la animación de intercambio de demonio en el Loadout. Siempre activa (exploración y combate). Durante la animación Edrick no puede moverse, atacar ni dashearse."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: SWAP_COMBAT_COOLDOWN
+    status: active
+    source: design/gdd/loadout-build-management.md
+    referenced_by:
+      - design/gdd/loadout-build-management.md
+    value: 5.0
+    unit: seconds
+    notes: "Cooldown entre swaps de demonio en combate. Empieza al finalizar SWAP_ANIM_DURATION. Solo activo en estado COMBAT. Tiempo efectivo entre swaps: 5.8s (0.8+5.0)."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: SLOTS_BASE
+    status: active
+    source: design/gdd/loadout-build-management.md
+    referenced_by:
+      - design/gdd/loadout-build-management.md
+    value: 2
+    unit: slots
+    notes: "Número de slots de demonio con los que arranca Edrick al inicio del juego (MVP). Slots adicionales: encontrar Sellos de Vínculo en el mundo (+1 cada uno, máximo SLOTS_MAX)."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: SLOTS_MAX
+    status: active
+    source: design/gdd/loadout-build-management.md
+    referenced_by:
+      - design/gdd/loadout-build-management.md
+    value: 5
+    unit: slots
+    notes: "Techo máximo de slots de demonio. No superable aunque se encuentren más Sellos de Vínculo. Implica 3 Sellos en el mundo (post-MVP). Cambiar este valor requiere rediseño del HUD y del Motor de Sinergias."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: HP_FLOOR
+    status: active
+    source: design/gdd/loadout-build-management.md
+    referenced_by:
+      - design/gdd/loadout-build-management.md
+    value: 1
+    unit: HP
+    notes: "HP_MAX mínimo absoluto. HP_MAX nunca puede ser < 1 aunque los hp_bonus sumen negativo. Protege contra kills instantáneos al equipar."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: HP_CEILING
+    status: active
+    source: design/gdd/loadout-build-management.md
+    referenced_by:
+      - design/gdd/loadout-build-management.md
+    value: 125
+    unit: HP
+    notes: "HP_MAX máximo absoluto. Protege contra stacking descontrolado de hp_bonus en expansión post-MVP. Con daño base del Agresor Melee (12 HP), 125 HP = ~10 golpes — manejable."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: ARCANO_AMP
+    status: active
+    source: design/gdd/motor-sinergias.md
+    referenced_by:
+      - design/gdd/motor-sinergias.md
+    value: 1.25
+    unit: multiplier
+    notes: "Factor de amplificación de Arcano sobre efectos especiales (burn_rate, freeze_duration, dash_speed, resistencias). NO aplica a daño_bonus (aditivo), dodge_count_bonus (+1 entero fijo), ni cooldown_flat_reduction (-0.1s fijo). Rango seguro: [1.15, 1.35]."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: ANULACION_FACTOR
+    status: active
+    source: design/gdd/motor-sinergias.md
+    referenced_by:
+      - design/gdd/motor-sinergias.md
+    value: 0.85
+    unit: multiplier
+    notes: "Factor de penalización por sinergia fuego_hielo. Se aplica a magnitudes de efectos especiales (rates, slow%). NO a duraciones ni daño_bonus. Rango seguro: [0.75, 0.90]."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: FRICCION_PENALTY
+    status: active
+    source: design/gdd/motor-sinergias.md
+    referenced_by:
+      - design/gdd/motor-sinergias.md
+    value: 0.15
+    unit: velocity_multiplier_delta
+    notes: "Resta plana al velocity_multiplier_combined cuando fuego_hielo está activo. Se aplica después del producto de velocidades individuales. Rango seguro: [0.10, 0.20]. Con Hielo (×0.90) y FRICCION_PENALTY=0.20, Edrick llegaría a 0.70× (175 px/s) — límite del rango."
+    added: "2026-05-28"
+    revised: ""
+
+  - name: OUTBURST_TIME
+    status: active
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 1.0
+    unit: seconds
+    notes: "Duración de la fase de explosión radial en la secuencia de binding — partículas explotan desde el portador hacia afuera. Rango seguro: [0.6, 1.5]s. Componente de BINDING_DURATION (F-VD-02). Reemplaza PARTICLE_TRAVEL_TIME (deprecado 2026-05-29)."
+    added: "2026-05-29"
+    revised: ""
+
+  - name: IMPACT_TIME
+    status: active
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 0.5
+    unit: seconds
+    notes: "Duración de la fase de reversión (impacto) en la secuencia de binding — partículas convergen en Edrick. Rango seguro: [0.3, 0.8]s. Componente de BINDING_DURATION (F-VD-02). Todos los sprites llegan simultáneamente independientemente de su distancia individual."
+    added: "2026-05-29"
+    revised: ""
+
+  - name: PARTICLE_TRAVEL_TIME
+    status: deprecated
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 1.5
+    unit: seconds
+    notes: "DEPRECADO 2026-05-29: reemplazado por OUTBURST_TIME (1.0s) + IMPACT_TIME (0.5s). El rediseño de partículas (B4 — bidireccional, Opción 2) divide la fase en explosión radial seguida de reversión hacia Edrick."
+    added: "2026-05-29"
+    revised: "2026-05-29"
+
+  - name: TENSION_ANIM_TIME
+    status: active
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 0.3
+    unit: seconds
+    notes: "Duración de la animación de tensión de Edrick (encorva → endereza) al recibir el impacto de las partículas. Rango seguro: [0.2, 0.5]s. Componente de BINDING_DURATION (F-VD-02)."
+    added: "2026-05-29"
+    revised: ""
+
+  - name: AURA_FADE_TIME
+    status: active
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 0.5
+    unit: seconds
+    notes: "Duración del fade-in de la distorsión de aura de Edrick al recibir las partículas. Rango seguro: [0.3, 0.8]s. Componente de BINDING_DURATION (F-VD-02)."
+    added: "2026-05-29"
+    revised: ""
+
+  - name: SILENCE_TIME
+    status: active
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 0.3
+    unit: seconds
+    notes: "Beat de silencio post-aura antes de descongelar el mundo. Rango seguro: [0.1, 0.5]s. Componente de BINDING_DURATION (F-VD-02)."
+    added: "2026-05-29"
+    revised: ""
+
+  - name: BINDING_DURATION
+    status: active
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 2.6
+    unit: seconds
+    notes: "Duración total de la secuencia estándar (mundo congelado). Compuesto: OUTBURST_TIME + IMPACT_TIME + TENSION_ANIM_TIME + AURA_FADE_TIME + SILENCE_TIME = 1.0+0.5+0.3+0.5+0.3. No ajustar directamente — cambiar los componentes. Rango seguro total: [1.4, 3.8]s. (Revisado 2026-05-29: era 2.3s con fórmula incompleta — faltaba TENSION_ANIM_TIME y la fase bidireccional de partículas se rediseñó.)"
+    added: "2026-05-29"
+    revised: "2026-05-29"
+
+  - name: OUTBURST_RADIUS
+    status: active
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 150
+    unit: px
+    notes: "Radio de dispersión desde el portador en la fase de explosión de la secuencia de binding (F-VD-03). Los sprites explotan hacia afuera hasta este radio antes de revertir hacia Edrick. Rango seguro: [80, 250]px."
+    added: "2026-05-29"
+    revised: ""
+
+  - name: PARTICLE_MIN_SPEED
+    status: deprecated
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 100
+    unit: px/s
+    notes: "DEPRECADO 2026-05-29: la secuencia bidireccional usa duración fija (OUTBURST_TIME e IMPACT_TIME) para cada fase — no hay velocidad mínima necesaria. La condición de frontera distance=0 es manejada por la fase de explosión hacia OUTBURST_RADIUS."
+    added: "2026-05-29"
+    revised: "2026-05-29"
+
+  - name: PARTICLE_COUNT
+    status: active
+    source: design/gdd/vinculacion-demonios.md
+    referenced_by:
+      - design/gdd/vinculacion-demonios.md
+    value: 40
+    unit: particles
+    notes: "Número de sprites Node2D en la secuencia bidireccional de binding. Rango seguro: [20, 60]. Por encima de 60 hay impacto de rendimiento (dos Tweens paralelos de 60+ nodos simultáneos)."
+    added: "2026-05-29"
+    revised: "2026-05-29"
+
+  - name: SANCTUARY_RADIUS
+    status: active
+    source: design/gdd/salud-daño.md
+    referenced_by:
+      - design/gdd/salud-daño.md
+    value: 64
+    unit: px
+    notes: "Radio de detección del Santuario. Edrick entra en este radio → curación automática (§3.9). Rango seguro: 32–128 px. Placement de Santuarios: responsabilidad del Level Designer (GDD #8)."
+    added: "2026-05-29"
+    revised: ""
+
+  - name: SAVE_INDICATOR_DURATION
+    status: active
+    source: design/gdd/guardado-y-carga.md
+    referenced_by:
+      - design/gdd/guardado-y-carga.md
+    value: 1.5
+    unit: seconds
+    notes: "Tiempo que el ícono de guardado permanece visible en pantalla. Rango seguro: 0.8–3.0s. HUD (GDD #18) escucha show_save_indicator y usa esta constante para el timer del ícono."
+    added: "2026-05-28"
+    revised: ""
+
   - name: corruption_floor_per_dark_act
     status: active
     source: design/gdd/estado-del-mundo.md
@@ -422,8 +685,15 @@ constants:
 
 # edrick_died()
 #   source: design/gdd/salud-daño.md
-#   referenced_by: design/gdd/combate-tiempo-real.md
+#   referenced_by: design/gdd/combate-tiempo-real.md, design/gdd/vinculacion-demonios.md
 #   added: 2026-05-26
+
+# edrick_respawned()
+#   source: design/gdd/salud-daño.md (GDD #2 DEBE añadir esta señal — actualmente no existe)
+#   referenced_by: design/gdd/vinculacion-demonios.md (BindingSystem resetea _edrick_alive=true al recibirla)
+#   added: 2026-05-29
+#   notes: Necesaria porque BindingSystem es Autoload — _ready() se ejecuta solo al arrancar la app.
+#          Sin esta señal, ningún binding es posible tras la primera muerte de Edrick en la sesión.
 
 # corruption_passive_tick(amount_per_minute: float)
 #   source: design/gdd/combate-tiempo-real.md
@@ -434,10 +704,14 @@ constants:
 #
 # DEPRECATED: corruption_damaged(amount: float) — reemplazada por corruption_passive_tick (2026-05-26)
 
-# health_changed(nuevo_hp, daño_recibido, tipo_daño)
+# health_changed(nuevo_hp: int, daño_recibido: int, tipo_daño: String)
 #   source: design/gdd/salud-daño.md
 #   referenced_by: HUD de Combate (GDD pendiente)
 #   added: 2026-05-26
+#   revised: 2026-05-29
+#   tipo_daño values: "physical", "fire", "ice", "arcane", "corruption", "restauracion"
+#   nota: cuando tipo_daño == "restauracion" (Santuario), daño_recibido es negativo (HP ganado).
+#         Si HP ya era máximo, la señal NO se emite (AC-S4).
 
 # enemy_detected(enemy_id: int)
 #   source: design/gdd/ia-enemigos.md
@@ -474,7 +748,72 @@ constants:
 #   referenced_by: design/gdd/sistema-audio.md (crossfade de música)
 #   added: 2026-05-26
 
+# game_saved()
+#   source: design/gdd/guardado-y-carga.md (SaveLoadSystem)
+#   referenced_by: (ninguno aún — HUD/Menú Principal añadirán referencia)
+#   added: 2026-05-28
+
+# save_failed()
+#   source: design/gdd/guardado-y-carga.md (SaveLoadSystem)
+#   referenced_by: (ninguno aún)
+#   added: 2026-05-28
+
+# game_loaded()
+#   source: design/gdd/guardado-y-carga.md (SaveLoadSystem)
+#   referenced_by: (ninguno aún)
+#   added: 2026-05-28
+
+# load_failed()
+#   source: design/gdd/guardado-y-carga.md (SaveLoadSystem)
+#   referenced_by: (ninguno aún)
+#   added: 2026-05-28
+
+# show_save_indicator()
+#   source: design/gdd/guardado-y-carga.md (SaveLoadSystem)
+#   referenced_by: design/gdd/guardado-y-carga.md (HUD GDD #18 escuchará esta señal)
+#   added: 2026-05-28
+#   notes: No se emite en area-exit ni en guardados parciales de evento crítico.
+
 # interaccion_completada()
 #   source: design/gdd/sistema-npc-dialogo.md (GDD #15 — aún no escrito)
 #   referenced_by: design/gdd/exploracion-del-mundo.md (restaura input tras POI)
 #   added: 2026-05-26
+
+# loadout_changed(equipped_demons: Array[String], gato_available: bool)
+#   source: design/gdd/loadout-build-management.md (Loadout emite al finalizar SWAP_ANIM_DURATION o cuando gato_available cambia)
+#   referenced_by: design/gdd/motor-sinergias.md (único trigger de reevaluación del Motor)
+#   added: 2026-05-28
+#   notes: gato_available: bool añadido durante diseño de GDD #11. GDD #10 §3.3 pendiente actualizar para reflejar nuevo payload. Loadout re-emite con mismo equipped_demons si solo cambia gato_available.
+
+# synergies_updated(active_synergies: Array[String])
+#   source: design/gdd/motor-sinergias.md (SynergyEngine emite al finalizar cada evaluación)
+#   referenced_by: (GDD #19 Bestiario — pendiente diseño)
+#   added: 2026-05-28
+#   notes: Se emite exactamente una vez por loadout_changed recibido. Bestiario escucha para actualizar sinergias "descubiertas" sin polling.
+
+# portador_murio(portador_id: String, position: Vector2)
+#   source: design/gdd/vinculacion-demonios.md (receptor — define el contrato)
+#   emitters: design/gdd/combate-tiempo-real.md (portadores hostiles), design/gdd/sistema-npc-dialogo.md (portadores no-hostiles)
+#   referenced_by: design/gdd/vinculacion-demonios.md
+#   added: 2026-05-29
+#   notes: Señal unificada que desacopla el sistema de binding de cómo murió el portador. El campo position captura la posición del portador al morir — usado en F-VD-03.
+
+# binding_started(demon_id: String)
+#   source: design/gdd/vinculacion-demonios.md
+#   referenced_by: design/gdd/sistema-audio.md (reproduce tema de binding del demonio)
+#   added: 2026-05-29
+#   notes: Emitida al entrar en SEQUENCE_STANDARD. No emitida para secuencias custom (la escena custom gestiona su propio audio). Emitida exactamente una vez por binding.
+
+# demon_bound(demon_id: String)
+#   source: design/gdd/vinculacion-demonios.md (emitida tras Registro para todos los demonios)
+#   additional_emitter: design/gdd/progresion-narrativa.md (GDD #16 — emite demon_bound("cat") directamente para el Gato)
+#   referenced_by: design/gdd/loadout-build-management.md, design/gdd/motor-sinergias.md
+#   added: 2026-05-29
+#   notes: Señal downstream primaria de este sistema. Siempre emitida DESPUÉS de escribir en world_state.available_demons (AC-VD-023). GDD #16 es co-emisor solo para "cat".
+
+# binding_sequence_complete()
+#   source: design/gdd/vinculacion-demonios.md (contrato que cada escena custom debe implementar)
+#   emitters: escenas custom individuales (ej: DashBinding.tscn)
+#   referenced_by: design/gdd/vinculacion-demonios.md (sistema espera esta señal en SEQUENCE_CUSTOM)
+#   added: 2026-05-29
+#   notes: Señal sin payload. La escena custom es responsable de emitirla al terminar. Sin esta señal el sistema queda en SEQUENCE_CUSTOM — ver P-VD-01.

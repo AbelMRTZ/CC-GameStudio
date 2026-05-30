@@ -1,6 +1,6 @@
 # GDD: Sistema de Cámara
 
-> **Estado**: Diseñado
+> **Estado**: Aprobado
 > **Autor**: Abel + agentes
 > **Última Actualización**: 2026-05-27
 > **Sistema**: Cámara
@@ -55,17 +55,19 @@ En modo FOLLOW, la cámara no centra a Edrick directamente — calcula una **pos
 # En _process(delta):
 var target_clamped = apply_zone_limits(target_position)  # F5
 
-# Compute lerp factor, clamped for frame-rate stability
-var lerp_factor = smoothing_speed * delta
+# Frame-rate independent lerp factor (exponential decay — always in (0,1))
+var lerp_factor = 1.0 - exp(-smoothing_speed * delta)
+
 var delta_vec = target_clamped - camera.position
 var delta_magnitude = delta_vec.length()
 
-# Cap the per-frame movement to lerp_delta_clamp_max for safety during pivots
-if delta_magnitude > lerp_delta_clamp_max:
-  var clamped_delta = delta_vec.normalized() * lerp_delta_clamp_max
+# Cap per-frame movement, normalized to 60fps: lerp_delta_clamp_max px/frame at target fps
+var max_delta_this_frame = lerp_delta_clamp_max * clamp(delta * 60.0, 1.0, 3.0)
+
+if delta_magnitude > max_delta_this_frame:
+  var clamped_delta = delta_vec.normalized() * max_delta_this_frame
   camera.position += clamped_delta
 else:
-  # Normal lerp when movement is under the cap
   camera.position = camera.position.lerp(target_clamped, lerp_factor)
 
 # Snap to integer pixels for clean pixel-art rendering
@@ -73,9 +75,10 @@ camera.position = camera.position.round()
 ```
 
 **Detalles clave:**
-- La posición objetivo se calcula con F1: `target.x = Edrick.x + (dir_input × look_ahead_current)`
+- La posición objetivo se calcula con F1: `target.x = Edrick.x + (effective_dir × look_ahead_current)`
 - `smoothing_speed` es variable: 6.0 en exploración, 9.0 en combate, interpolado dinámicamente por F3
-- `lerp_delta_clamp_max` = 12px: previene teleports durante pivotes rápidos (E1). Si `|target − current|` excede este máximo por frame, movimiento se limita a 12px.
+- `lerp_delta_clamp_max` = 12px a 60fps: previene teleports durante pivotes rápidos (E1). El cap se normaliza por delta (`lerp_delta_clamp_max × clamp(delta×60, 1, 3)`) para ser frame-rate independent.
+- **Fórmula lerp**: `1.0 - exp(-speed × delta)` produce valores siempre en (0,1) para cualquier delta positivo — sin overshoot posible.
 - **`Camera2D.position_smoothing_enabled` debe estar DESACTIVADO** (suavizado es manual, no nativo)
 - **`Camera2D.limit_left/right/top/bottom` deben estar DESACTIVADOS** (clamping ocurre en F5, no en Camera2D)
 - **Drag margins (`drag_*_enabled`) deben estar DESACTIVADOS** — interfieren con el lerp manual
@@ -106,7 +109,14 @@ Para implementar el framing cinematográfico de la Player Fantasy, el sistema so
 2. Opcionalmente aplica un **zoom suave** (`push-in`) si el anchor lo define.
 3. Al salir del área, el offset y el zoom se revierten gradualmente.
 
-Un `CameraAnchor` define: `offset_x`, `offset_y`, `zoom_target`, `transition_time`. Son opcionales — el 80% de las zonas no los necesitan; se reservan para momentos narrativos de alto impacto.
+Un `CameraAnchor` define: `offset_x`, `offset_y`, `zoom_target`, `transition_time`. Son opcionales — la mayoría de las zonas no los necesitan.
+
+**Criterios de autoría (cuándo colocar un anchor):**
+Un anchor se justifica cuando la zona cumple al menos uno de estos criterios:
+1. **Vista icónica o landmark** — primera vista de una catedral, castillo en ruinas, horizonte de reino, elemento arquitectónico que define la identidad visual de la zona. El encuadre intencional realza el Pilar 3.
+2. **Beat narrativo o NPC clave** — zona donde ocurre un diálogo importante, revelación de lore, encuentro con personaje significativo. El encuadre refuerza el peso emocional del momento.
+
+El anchor debe colocarse de forma que Edrick entre en el Area2D **antes** de ver el elemento a enmarcar — la transición de entrada comunica "el juego te está mostrando algo." El Area2D debe ser generoso (±50-100 px del elemento) para que el blend sea suave antes de que el jugador vea el motivo. **El default es no anchor** — colocar uno es una decisión narrativa consciente, no una decoración.
 
 **R6 — Transición en Cambio de Zona**
 
@@ -151,9 +161,12 @@ Restricciones: No se puede entrar en CINEMATIC desde TRANSITION. CINEMATIC siemp
   - `camera_data` fields: `target_position: Vector2`, `target_zoom: float`, `transition_time: float`, `easing_type: String` (e.g., "linear", "ease_out")
   - Modo CINEMATIC interpola `camera.position` y `camera.zoom` desde valores actuales hacia targets sobre `transition_time`.
   - No hay look-ahead, no hay limit clamping — la cinemática es absoluta.
-- Recibe `EventBus.cinematic_ended()` → sale a FOLLOW_EXPLORE (nunca a FOLLOW_COMBAT).
-  - Nota: Si el Sistema de Combate #6 está activo cuando la cinemática termina, debe re-emitir `EventBus.combat_started` para restaurar FOLLOW_COMBAT.
-  - El timing de esa re-emisión determinará cuánto tiempo la cámara está en framing equivocado durante la transición post-cinematic.
+- Recibe `EventBus.cinematic_ended()` → consulta `EventBus.is_combat_active()` inmediatamente:
+  - Si `is_combat_active() == false`: sale a FOLLOW_EXPLORE.
+  - Si `is_combat_active() == true`: sale directamente a FOLLOW_COMBAT (no pasa por FOLLOW_EXPLORE).
+  - **El controlador de cámara es responsable de consultar el estado** — el Sistema de Combate #6 no necesita re-emitir señales post-cinemática.
+- **Validación de `camera_data`**: antes de procesar el Dictionary, el controlador llama `_validate_camera_data(camera_data)` que verifica que existen las claves requeridas (`target_position`, `target_zoom`, `transition_time`, `easing_type`). Si una clave falta, log de error y mantener estado actual. Esto previene crashes por typos en GDD #17.
+  - Claves requeridas: `target_position: Vector2`, `target_zoom: float`, `transition_time: float`, `easing_type: String` (valores: `"linear"`, `"ease_out"`, `"ease_in"`, `"ease_in_out"`)
 
 ---
 
@@ -162,7 +175,9 @@ Restricciones: No se puede entrar en CINEMATIC desde TRANSITION. CINEMATIC siemp
 ### F1 — Posición Objetivo (Follow Target)
 
 ```gdscript
-target.x = edrick.position.x + (dir_input * look_ahead_current)
+# Hybrid direction: velocity-based while moving, input-based against walls
+effective_dir = sign(velocity_x) if abs(velocity_x) > velocity_dir_threshold else dir_input
+target.x = edrick.position.x + (effective_dir * look_ahead_current)
 target.y = edrick.position.y + vertical_offset
 ```
 
@@ -172,13 +187,15 @@ target.y = edrick.position.y + vertical_offset
 |----------|------|-------|-------------|
 | `target.x / target.y` | float | [−∞, +∞] | Posición objetivo de la cámara en espacio de mundo |
 | `edrick.position.x / .y` | float | [−∞, +∞] | Posición actual del CharacterBody2D de Edrick |
-| `dir_input` | float | {−1, 0, +1} | Input horizontal discreto: −1 (izquierda), +1 (derecha), 0 (ninguno). **Nota**: representa *intención*, no velocidad |
-| `look_ahead_current` | float | [0, look_ahead_max] px | Magnitud de look-ahead interpolada (output de F2). Multiplicado por `dir_input` para dirección |
+| `effective_dir` | float | {−1, 0, +1} | Dirección efectiva del look-ahead. Usa `sign(velocity_x)` si `|velocity_x| > velocity_dir_threshold` (preserva dirección durante desaceleración); usa `dir_input` en caso contrario (preserva look-ahead contra paredes) |
+| `dir_input` | float | {−1, 0, +1} | Input horizontal discreto del jugador |
+| `velocity_dir_threshold` | float | 20 px/s | Umbral de velocidad para cambiar de input-driven a velocity-driven. Por debajo: usa dir_input (wall-press). Por encima: usa sign(velocity_x) (decel natural) |
+| `look_ahead_current` | float | [0, look_ahead_max] px | Magnitud de look-ahead interpolada (output de F2). Multiplicado por `effective_dir` para dirección |
 | `vertical_offset` | float | −8 px (fijo) | Elevación del encuadre. Negativo = más suelo visible adelante |
 
 **Output range:** Sin clamping, [pos_edrick.x − look_ahead_max, pos_edrick.x + look_ahead_max] en X. Se clampea en F5.
 
-**Nota de implementación:** `dir_input` es la entrada de input del jugador (discreta), **no** la velocidad. Esto permite que la intención del jugador mantenga el look-ahead incluso contra una pared (`velocity = 0`, pero `dir_input ≠ 0`). La magnitud viene de F2 (basada en velocidad). Ver E1 para comportamiento con paredes.
+**Nota de implementación:** La dirección es híbrida: cuando Edrick se desacelera (tecla soltada pero momentum activo), `sign(velocity_x)` mantiene el look-ahead en la dirección de movimiento hasta que la velocidad cae bajo `velocity_dir_threshold = 20 px/s` — comportamiento orgánico, la cámara sigue al cuerpo, no al dedo. Contra una pared (`velocity_x = 0`, `dir_input ≠ 0`), usa `dir_input` para mantener look-ahead de intención. La magnitud siempre viene de F2 (basada en velocidad). Ver E1.
 
 ---
 
@@ -188,6 +205,7 @@ target.y = edrick.position.y + vertical_offset
 speed_ratio = clamp(abs(velocity_x) / max_speed, 0.0, 1.0)
 look_ahead_raw = look_ahead_max * speed_ratio
 look_ahead_next = lerp(look_ahead_current, look_ahead_raw, look_ahead_speed * delta)
+look_ahead_next = clamp(look_ahead_next, 0.0, look_ahead_max)  # guard durante transiciones F3
 ```
 
 **Variables:**
@@ -266,14 +284,17 @@ zoom_current = lerp(1.0, anchor.zoom_target, anchor_t)
 
 **Exit transition (Edrick leaves Area2D):**
 ```gdscript
-# Revert from current offset/zoom back to neutral (0.0, 1.0)
-# Do NOT reset anchor_elapsed to 0 — continue countdown from current value
-anchor_t = clamp(anchor_elapsed / anchor.transition_time, 0.0, 1.0)
-anchor_offset.x = lerp(anchor_offset_current.x, 0.0, anchor_t)
-anchor_offset.y = lerp(anchor_offset_current.y, 0.0, anchor_t)
-zoom_current = lerp(zoom_current_prev, 1.0, anchor_t)
+# On body_exited: record current values, reset exit_elapsed = 0
+# anchor_offset_at_exit = anchor_offset  (snapshot at exit moment)
+# zoom_at_exit = zoom_current            (snapshot at exit moment)
+
+exit_elapsed += delta
+exit_t = clamp(exit_elapsed / anchor.transition_time, 0.0, 1.0)
+anchor_offset.x = lerp(anchor_offset_at_exit.x, 0.0, exit_t)
+anchor_offset.y = lerp(anchor_offset_at_exit.y, 0.0, exit_t)
+zoom_current = lerp(zoom_at_exit, 1.0, exit_t)
 ```
-where `anchor_offset_current` = value of offset at exit time, `zoom_current_prev` = value of zoom at exit time.
+**Crítico**: `exit_elapsed` es un timer SEPARADO de `anchor_elapsed`. Siempre empieza en 0 cuando `body_exited` se emite, garantizando que la salida siempre dura `anchor.transition_time` completo, independientemente de cuánto tiempo Edrick estuvo dentro.
 
 **Architecture note (for multi-anchor support):** When a second anchor overlaps the first (E4), push the first anchor's state onto a stack before activating the new one. On exit, pop the stack to restore the previous anchor's state. A single `current_anchor` variable is insufficient.
 
@@ -291,10 +312,13 @@ camera.zoom = Vector2(zoom_current, zoom_current)
 
 | Variable | Tipo | Rango | Descripción |
 |----------|------|-------|-------------|
-| `anchor_elapsed` | float | [0, transition_time] s | Tiempo desde que Edrick entró al Area2D del anchor |
+| `anchor_elapsed` | float | [0, transition_time] s | Tiempo desde que Edrick entró al Area2D — usado solo para la transición de ENTRADA |
+| `exit_elapsed` | float | [0, transition_time] s | Timer SEPARADO de entrada. Reseteado a 0 cuando `body_exited` se emite. Usado solo para transición de SALIDA. Garantiza duración completa independiente del estado de entrada |
+| `anchor_offset_at_exit` | Vector2 | [−80, +80] px | Snapshot de `anchor_offset` en el momento en que Edrick sale del anchor |
+| `zoom_at_exit` | float | [0.85, 1.2] | Snapshot de `zoom_current` en el momento en que Edrick sale del anchor |
 | `anchor.offset_x / anchor.offset_y` | float | [−80, +80] px | Offset de composición definido manualmente en el anchor |
 | `anchor.zoom_target` | float | [0.85, 1.2] | Zoom destino del anchor |
-| `anchor.transition_time` | float | [0.2, 2.0] s | Duración de la transición de entrada/salida |
+| `anchor.transition_time` | float | [0.2, 2.0] s | Duración de la transición de entrada Y de salida (misma duración para ambas) |
 | `anchor_offset.x / anchor_offset.y` | float | [−80, +80] px | Offset interpolado (output) |
 | `zoom_current` | float | [0.85, 1.2] | Zoom interpolado (output) |
 
@@ -349,7 +373,7 @@ else:
 
 **Situación**: Edrick corre a la derecha a 250 px/s (look-ahead = +50 px). En el siguiente frame presiona A y suelta D — input cambia a −1 (izquierda).
 
-**Resultado**: `target.x` salta de `pos_edrick.x + 50` a `pos_edrick.x − 50` (delta de 100 px). **Sin embargo**, la cámara NO salta — el lerp manual (R2) interpola suavemente desde la posición actual hacia el nuevo target. Con `smoothing_speed = 6.0` en exploración, la interpolación toma ~8-12 frames (0.13-0.2s a 60 fps). Edrick pivota fluidamente; la cámara lo sigue con una curva suave sin glitch ni parpadeo. Si el delta del target excede `lerp_delta_clamp_max = 12 px`, el lerp se clampea por frame para evitar un jump visual excesivo (E1 el clamping es transparente porque el lerp lo absorbe naturalmente).
+**Resultado**: `effective_dir` cambia de +1 a −1 inmediatamente. `target.x` salta de `pos_edrick.x + 50` a `pos_edrick.x − 50` (delta de 100 px). **Sin embargo**, la cámara NO salta — el lerp manual (R2) interpola suavemente. Los primeros frames post-pivote el clamp de 12px/frame (normalizado por delta) limita el movimiento. Con `smoothing_speed = 6.0` en exploración, la cámara alcanza el nuevo target en **~28-40 frames al 95%** (~0.47-0.67s a 60 fps). Edrick pivota fluidamente; la cámara lo sigue con una curva suave sin glitch ni parpadeo.
 
 ---
 
@@ -365,7 +389,7 @@ else:
 
 **Situación**: Sistema de Combate (#6) tiene `combat_started` activo (look_ahead = 20 px). Edrick toca una zona de transición.
 
-**Resultado**: Cámara entra en TRANSITION (congela posición). Estado FOLLOW_COMBAT permanece pendiente. Durante fade-out (0.3s), la cámara no se mueve. Cuando la nueva zona carga, la cámara snap a la posición inicial de Edrick y restaura automáticamente los parámetros de combate. El combate continúa fluidamente en la nueva zona.
+**Resultado**: Cámara entra en TRANSITION (congela posición). Durante fade-out (0.3s), la cámara no se mueve. Cuando la nueva zona carga y `zona_transition_ended` se emite, la cámara snap a la posición inicial de Edrick y sale a **FOLLOW_EXPLORE** (no FOLLOW_COMBAT). Al re-activarse en FOLLOW_EXPLORE, el controlador de cámara consulta `EventBus.is_combat_active()` — si retorna `true`, transiciona inmediatamente a FOLLOW_COMBAT sin esperar señal. El combate continúa fluidamente en la nueva zona.
 
 ---
 
@@ -429,7 +453,8 @@ Sistemas que **dependen de este sistema**:
 | `anchor_offset_max` | ±80 px | ±50 a ±100 px | Rango máximo de desplazamiento de un CameraAnchor (F4). |
 | `anchor_zoom_min` | 0.85 | 0.75–0.95 | Zoom mínimo permitido en anchors (aleja). |
 | `anchor_zoom_max` | 1.2 | 1.1–1.5 | Zoom máximo permitido en anchors (acerca). |
-| `lerp_delta_clamp_max` | 12 px | 8–15 px | Máxima diferencia de posición de cámara por frame en lerp (safety). Si `|(target - current)| > lerp_delta_clamp_max` por frame, clampear el delta para evitar teleport durante grandes saltos de target (ej: pivote rápido). |
+| `lerp_delta_clamp_max` | 12 px | 8–15 px | Máxima diferencia de posición de cámara por frame a 60fps. El cap se normaliza por delta: `lerp_delta_clamp_max × clamp(delta×60, 1, 3)`. Previene teleports durante grandes saltos de target. |
+| `velocity_dir_threshold` | 20 px/s | 5–50 px/s | Velocidad mínima para que la dirección del look-ahead use `sign(velocity_x)` en lugar de `dir_input`. Mayor = la cámara sigue la intención del input antes; menor = sigue el momentum más tiempo. |
 
 ---
 
@@ -452,8 +477,10 @@ No hay requisitos de UI específicos. El sistema de cámara no genera elementos 
 - [ ] **AC 1: Suavizado Nativo Desactivado**
   - Verificar `Camera2D.position_smoothing_enabled = false` en runtime startup.
   - Verificar `Camera2D.drag_horizontal_enabled = false` y `drag_vertical_enabled = false`.
-  - Verificar `Camera2D.limit_left = Camera2D.limit_right = Camera2D.limit_top = Camera2D.limit_bottom = -1` (disabled).
-  - **Pass**: no propiedades nativas de Camera2D interfieren con el lerp manual. Log output: "✓ Camera2D properties correctly configured for manual smoothing."
+  - Verificar `Camera2D.limit_left = -10000000`, `Camera2D.limit_top = -10000000` (Godot 4 no-limit sentinels).
+  - Verificar `Camera2D.limit_right = 10000000`, `Camera2D.limit_bottom = 10000000`.
+  - **Nota**: en Godot 4, `-1` es una coordenada de pixel, NO un flag "sin límite". Los valores correctos para "sin límite" son `±10000000` (los defaults del engine). Asignar `-1` a `limit_left` crea una pared en `x = -1px`.
+  - **Pass**: no propiedades nativas de Camera2D interfieren con el lerp manual. Log output: "✓ Camera2D limits set to no-limit sentinels (±10000000). Smoothing/drag disabled."
 
 - [ ] **AC 2: Look-Ahead Horizontal en Exploración**
   - Overlay de debug: mostrar `look_ahead_current`, `edrick.position.x`, `camera.position.x`.

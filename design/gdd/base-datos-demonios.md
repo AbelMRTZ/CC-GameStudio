@@ -1,8 +1,8 @@
 # GDD: Base de Datos de Demonios
 
-> **Estado**: Aprobado (post-revisión — 7 bloqueantes resueltos 2026-05-24)
+> **Estado**: Aprobado (post-revisión — 7 bloqueantes resueltos 2026-05-24; revisado 2026-05-28)
 > **Creado**: 2026-05-24
-> **Última Actualización**: 2026-05-24 (Bloqueantes resueltos: turnos→segundos, convención signos resistencias, Restricciones Críticas corregidas, triple Dash+Fuego+Hielo, compuertas narrativas Gato, saturación vs corrupción moral separados, coste real Visión)
+> **Última Actualización**: 2026-05-28 (Bloqueantes resueltos: turnos→segundos, convención signos resistencias, Restricciones Críticas corregidas, triple Dash+Fuego+Hielo, compuertas narrativas Gato, saturación vs corrupción moral separados, coste real Visión. Revisión 2026-05-28: Dash redefinido como demonio normal adquirido narrativamente — eliminado "demonio_otorgado=true")
 > **Sistema**: Base de Datos de Demonios
 > **Milestone**: MVP — Foundation Layer
 > **Depende de**: — (sin dependencias)
@@ -57,7 +57,7 @@ modificadores_stats:
   - velocidad_multiplicador: float (0.5 a 2.0)
   - gravedad_multiplicador: float (0.5 a 1.5)
   - friccion_multiplicador: float (0.3 a 1.5)
-  - hp_bonus: integer (0 a +50)
+  - hp_bonus: integer (-10 a +50)
   - daño_bonus: float (-0.25 a +0.50)
 
 transformacion_visual:
@@ -164,7 +164,7 @@ restricciones:
 - **Habilidades Pasivas**: 
   - **"Amplificación Arcana"** (PASIVA GLOBAL): Amplifica ×1.25 los EFECTOS ESPECIALES de otros demonios equipados — tanto fortalezas COMO debilidades. NO afecta el `daño_bonus` base (que se suma aditivamente). Detalle completo en Sección 4.2.
   - **"Atravesar lo Inmaterial"** (EXPLORACIÓN NARRATIVA): Puede pasar a través de paredes/obstáculos mágicos en ciertos puzzles del mundo. Valor exclusivo de exploración, no afecta combate.
-- **Modificadores**: Daño bonus +0.20 (aditivo, sin auto-amplificación)
+- **Modificadores**: Daño bonus +0.20 (aditivo, sin auto-amplificación); **HP bonus −3** (coste visible MVP — el jugador elige entre amplificación ×1.25 e HP reducido; decisión de balance 2026-05-29)
 - **Corrupción Pasiva**: **Tier S — +0.005/min en combate** (el más alto del MVP — el coste moral de usar Arcano es significativo)
 - **Transformación Visual**: Aura púrpura/dorada, sprite con símbolos runícos flotando
 - **Historia**: Demonio de la magia antigua. Su poder amplifica todo lo que tocas — incluyendo tus propias debilidades. Y consume tu alma a un ritmo constante.
@@ -189,14 +189,14 @@ restricciones:
 - **Transformación Visual**: Aura platino/blanca, ojos que brillan con concentración
 - **Historia**: Demonio de la mente colectiva, aliado en diplomacia y estrategia
 
-#### 7. Dash (Demonio de la Espada Otorgado)
+#### 7. Dash (Demonio del Filo)
 - **Tipo**: COMBATE
-- **Ubicación**: "Edrick" (otorgado al inicio)
+- **Ubicación**: "Edrick" (adquirido narrativamente, igual que Fuego, Hielo u otros demonios)
 - **Habilidades Activas**:
   - **"Dash Attack"**: velocidad, duración, cooldown definidos en **GDD #1 Movimiento y Físicas 2D** §3.7. NO se re-define aquí. Valores canónicos viven únicamente en GDD #1. El multiplicador global de cooldown (GDD #6 §7.6 `cooldown_global_scale`) puede ajustar cooldowns de todas las habilidades simultáneamente.
-- **Modificadores**: Nada (es base, no modifica)
+- **Modificadores**: Nada (neutro en stats)
 - **Transformación Visual**: Sprite base de Edrick con espada/arma prominente
-- **Historia**: No demonio, sino poder fundamental de Edrick como guerrero
+- **Historia**: Demonio del filo y la velocidad. Edrick lo vincula al inicio de su viaje — su poder le confiere la capacidad de moverse más rápido de lo que la vista puede seguir. Es el primer demonio que Edrick obtiene, y el que define su estilo de combate base.
 
 ### 3.4 Cómo Funcionan las Sinergias
 
@@ -304,11 +304,12 @@ efecto_amplificado = efecto_base × 1.25
 
 #### C) Por qué Arcano sigue siendo elegible (no dominante)
 
-Combinando A+B y la habilidad narrativa "Atravesar lo Inmaterial" (línea 166), Arcano deja de ser estrictamente mejor:
+Combinando A+B y la habilidad narrativa "Atravesar lo Inmaterial", Arcano tiene costes visibles en MVP:
 - Te hace **más poderoso** si tu loadout tiene fortalezas claras
 - Te hace **más frágil** si tu loadout tiene debilidades elementales
+- **Reduce HP máximo en −3** (decisión de balance 2026-05-29): con Arcano+Visión, HP máximo baja a 67. El jugador elige amplificación vs supervivencia.
 - Tiene **valor exclusivo de exploración** (atravesar paredes mágicas en puzzles)
-- Genera **alta corrupción pasiva** (Tier S, ver Sección 4.3) — coste moral significativo
+- Genera **alta corrupción pasiva** (Tier S, ver Sección 4.3) — coste moral significativo (visible cuando GDD #22 esté implementado)
 
 **No es acumulativo**: Si Arcano está equipado con múltiples demonios, CADA UNO se amplifica independientemente, pero Arcano mismo no se aplica dos veces. Y Arcano NO se amplifica a sí mismo (su propio `daño_bonus` queda en +0.20).
 
@@ -468,14 +469,15 @@ No tienen fórmula matemática. Se evalúan narrativamente:
 **Escenario**: Edrick equipa Fuego, luego durante el combate cambia a Hielo (usa Loadout rápidamente).
 
 **Qué sucede**:
-1. El demonio anterior (Fuego) se desactiva inmediatamente
-2. Sus modificadores cesan (velocidad vuelve a 250 px/s, resistencias se pierden)
-3. La corrupción del demonio anterior se "memoria" en Estado del Mundo (narrativa) pero no afecta nuevo demonio
-4. El nuevo demonio (Hielo) se activa, aplicando sus modificadores y resistencias
-5. Cualquier efecto continuo del demonio anterior (ej: quemadura aplicada a enemigos) persiste (fue aplicado, el efecto es independiente)
-6. Las sinergias se recalculan basadas en el nuevo demonio
+1. Edrick entra en una **animación de intercambio de 0.8 segundos** — no puede moverse, atacar ni dashearse durante este tiempo.
+2. Al finalizar la animación: el demonio anterior (Fuego) se desactiva; sus modificadores cesan (velocidad, resistencias, etc.).
+3. El nuevo demonio (Hielo) se activa, aplicando sus modificadores y resistencias.
+4. La corrupción acumulada por el demonio anterior se "memoriza" en Estado del Mundo (narrativa) pero no afecta al nuevo demonio.
+5. Cualquier efecto continuo del demonio anterior ya aplicado a enemigos (ej: quemadura activa en un enemigo) persiste hasta que expire naturalmente — el efecto fue aplicado y es independiente del loadout.
+6. Las sinergias se recalculan basadas en el nuevo conjunto de demonios equipados.
+7. **Solo en combate**: durante la animación Edrick puede recibir daño. Al finalizar, se aplica un cooldown de 5 segundos antes de poder volver a cambiar el loadout en combate.
 
-**Restricción**: El cambio es instantáneo (sin transición). La UI muestra claramente qué demonio está activo.
+**Restricción**: La animación de 0.8s siempre ocurre al cambiar demonio (en exploración o combate). La UI muestra claramente qué demonio está activo una vez finalizada la animación.
 
 ### 5.2 Equipo de Demonio Cuando HP es Bajo
 
@@ -500,7 +502,7 @@ No tienen fórmula matemática. Se evalúan narrativamente:
 5. Arcano NO amplifica nada (sin otros demonios)
 6. Gato permanece siempre disponible (no es equipo, está en el gato)
 
-**Restricción**: El juego SIEMPRE requiere Dash (demonio base otorgado), pero otros demonios son opcionales.
+**Restricción**: Sin ningún demonio equipado, Edrick opera con stats completamente base (velocidad 250 px/s, HP 75, sin habilidades de dash ni habilidades especiales). La "Dash Attack" solo está disponible cuando Dash está equipado.
 
 ### 5.4 Gato en Combate con Múltiples Demonios en Edrick
 
@@ -888,7 +890,7 @@ Estos criterios de aceptación verifican que la Base de Datos de Demonios está 
 - [ ] **CA-010**: HP bonus y daño bonus están en rango seguro (HP 0-20, daño -0.25 a +0.50)
 - [ ] **CA-011**: Cada demonio tiene transformacion_visual con descripción y aura
 - [ ] **CA-012**: Cada demonio tiene historia_obtencion y ubicacion_obtencion documentadas
-- [ ] **CA-013**: Dash está marcado como demonio_otorgado = true (siempre disponible)
+- [ ] **CA-013**: Dash se vincula narrativamente en el primer acto del juego y aparece en `demonios_disponibles` igual que cualquier otro demonio una vez vinculado
 
 ### 8.3 Estructura de Gato Legendario
 

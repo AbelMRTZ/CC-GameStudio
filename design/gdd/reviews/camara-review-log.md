@@ -2,6 +2,18 @@
 
 ---
 
+## Review — 2026-05-27 (R3) — Verdict: APROBADO
+
+Scope signal: M
+Specialists: game-designer, systems-designer, gameplay-programmer, godot-specialist, qa-lead, creative-director
+Blocking items: 4 → 0 (todos resueltos en esta sesión) | Recommended: 5 → 0
+
+Summary: La revisión R2 encontró que los fixes de R1 introdujeron 3 bugs nuevos (limit_* = -1 incorrecto, F4 exit snap, lerp frame-rate dependency) y dejaron una contradicción sin resolver (E1 vs AC 4). Todos resueltos en R3. Además se incorporaron: effective_dir hybrid para look-ahead orgánico en desaceleración, consulta EventBus.is_combat_active() post-cinemática, criterios de autoría de CameraAnchors, y validación de camera_data. El GDD está listo para implementación.
+
+Prior verdict resolved: Sí — R2 fue MAJOR REVISION NEEDED (2026-05-27); R3 es APROBADO.
+
+---
+
 ## Review — 2026-05-27 — Verdict: MAJOR REVISION NEEDED → REVISIONS APPLIED 2026-05-27
 
 **Scope signal:** L (Large)

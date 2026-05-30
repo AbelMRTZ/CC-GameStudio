@@ -25,11 +25,11 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 | 6 | Combate en Tiempo Real | Gameplay | MVP | Aprobado | [combate-tiempo-real.md](combate-tiempo-real.md) | Movimiento, Salud/Daño, Base de Datos de Demonios |
 | 7 | IA de Enemigos (inferred) | Gameplay | MVP | Aprobado | [ia-enemigos.md](ia-enemigos.md) | Movimiento, Salud/Daño |
 | 8 | Exploración del Mundo | Gameplay | MVP | Aprobado | [exploracion-del-mundo.md](exploracion-del-mundo.md) | Movimiento, Estado del Mundo |
-| 9 | Cámara (inferred) | Core | MVP | In Review | [camara.md](camara.md) | Movimiento, Exploración |
-| 10 | Loadout & Build Management | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios |
-| 11 | Motor de Sinergias | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios, Loadout |
-| 12 | Guardado y Carga (inferred) | Persistence | MVP | No Iniciado | — | Estado del Mundo |
-| 13 | Vinculación de Demonios | Gameplay | MVP | No Iniciado | — | Base de Datos de Demonios, Motor de Sinergias, Combate |
+| 9 | Cámara (inferred) | Core | MVP | Aprobado | [camara.md](camara.md) | Movimiento, Exploración |
+| 10 | Loadout & Build Management | Gameplay | MVP | Aprobado | [loadout-build-management.md](loadout-build-management.md) | Base de Datos de Demonios, Estado del Mundo |
+| 11 | Motor de Sinergias | Gameplay | MVP | Aprobado | [motor-sinergias.md](motor-sinergias.md) | Base de Datos de Demonios, Loadout |
+| 12 | Guardado y Carga (inferred) | Persistence | MVP | Diseñado | [guardado-y-carga.md](guardado-y-carga.md) | Estado del Mundo |
+| 13 | Vinculación de Demonios | Gameplay | MVP | Aprobado | [vinculacion-demonios.md](vinculacion-demonios.md) | Base de Datos de Demonios, Motor de Sinergias, Combate |
 | 14 | Transformación Visual de Edrick | Gameplay | MVP | No Iniciado | — | Loadout, Base de Datos de Demonios |
 | 15 | Sistema de NPC y Diálogo | Narrative | MVP | Aprobado | [sistema-npc-dialogo.md](sistema-npc-dialogo.md) | Estado del Mundo |
 | 16 | Progresión Narrativa | Narrative | MVP | No Iniciado | — | Estado del Mundo, Vinculación, NPC y Diálogo |
@@ -175,10 +175,12 @@ Ninguna detectada. El grafo de dependencias es un DAG (Directed Acyclic Graph) l
 | Métrica | Cantidad |
 |---------|----------|
 | Total sistemas identificados | 26 |
-| GDDs iniciados | 9 |
-| GDDs en revisión | 0 |
-| GDDs aprobados | 8 |
-| Sistemas MVP diseñados | 9 / 21 |
+| GDDs iniciados | 14 |
+| GDDs en revisión | 1 |
+| GDDs aprobados | 11 |
+| GDDs diseñados (pendiente revisión) | 2 |
+| GDDs NEEDS REVISION | 0 |
+| Sistemas MVP diseñados | 14 / 21 |
 | Sistemas Vertical Slice diseñados | 0 / 3 |
 | Sistemas Alpha diseñados | 0 / 1 |
 | Sistemas Full Vision diseñados | 0 / 1 |
