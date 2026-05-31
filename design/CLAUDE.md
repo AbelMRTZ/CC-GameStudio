@@ -36,3 +36,13 @@ Use `/quick-design` to author.
 - Accessibility requirements: `design/ux/accessibility-requirements.md`
 
 Use `/ux-design` to author. Validate with `/ux-review` before passing to `/team-ui`.
+
+## Narrative Files (`design/narrative/`)
+
+Story, world, and character documents. These are **input** for GDDs and level design — they define what exists narratively before mechanics are designed.
+
+See `design/narrative/CLAUDE.md` for the full structure and authoring guide.
+
+**Authoring:** Free-form Markdown; no required sections. Prioritize clarity and completeness over format.
+
+**Validation:** When a GDD declares a narrative dependency (e.g. GDD #16), the referenced narrative document must exist and be marked as reviewed before the GDD can be authored.

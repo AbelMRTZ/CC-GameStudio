@@ -1,0 +1,3 @@
+# Sinopsis — Demons Of Dravaryn
+
+En un mundo medieval donde los demonios otorgan un poder sobrehumano a quienes se vinculan con ellos, **Edrick Velmar** —joven noble de la **Casa Velmar**— ve cómo su familia es exterminada por un ambicioso señor que busca acumular todos los demonios del mundo para convertirse en un dios. Rescatado de niño por un fiel caballero, **Edrick** creció con una sola promesa: vengar a los suyos. Ahora, con veinte años y sin nada más que su nombre, deberá labrarse un camino en un mundo hostil. Un encuentro inesperado con un demonio errante que adopta forma de gato le abrirá puertas que no imaginaba, pero también lo adentrará en un juego de poder que amenaza con corromperlo desde dentro.
