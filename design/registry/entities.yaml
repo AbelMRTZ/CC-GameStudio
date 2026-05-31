@@ -437,6 +437,7 @@ constants:
     source: design/gdd/loadout-build-management.md
     referenced_by:
       - design/gdd/loadout-build-management.md
+      - design/gdd/transformacion-visual-edrick.md
     value: 0.8
     unit: seconds
     notes: "Duración de la animación de intercambio de demonio en el Loadout. Siempre activa (exploración y combate). Durante la animación Edrick no puede moverse, atacar ni dashearse."
@@ -674,6 +675,18 @@ constants:
     added: "2026-05-26"
     revised: ""
 
+  - name: BINDING_AURA_TRANSITION
+    status: active
+    source: design/gdd/transformacion-visual-edrick.md
+    referenced_by:
+      - design/gdd/transformacion-visual-edrick.md
+      - design/gdd/vinculacion-demonios.md
+    value: 0.5
+    unit: seconds
+    notes: "Duración del crossfade (F-TVE-04, smoothstep) entre la distorsión oscura de GDD #13 y el aura permanente del demonio recién vinculado. GDD #13 emite demon_bound; GDD #14 toma ownership y ejecuta esta transición. Rango seguro: [0.3, 0.8]s."
+    added: "2026-05-30"
+    revised: ""
+
 # ─── SIGNALS (cross-system interfaces) ───────────────────────────────────────
 # Registrar señales cuya firma debe ser consistente en emisor y receptor.
 # No es una sección oficial del schema, pero permite grep-first de firmas.
@@ -685,12 +698,12 @@ constants:
 
 # edrick_died()
 #   source: design/gdd/salud-daño.md
-#   referenced_by: design/gdd/combate-tiempo-real.md, design/gdd/vinculacion-demonios.md
+#   referenced_by: design/gdd/combate-tiempo-real.md, design/gdd/vinculacion-demonios.md, design/gdd/transformacion-visual-edrick.md
 #   added: 2026-05-26
 
 # edrick_respawned()
 #   source: design/gdd/salud-daño.md (GDD #2 DEBE añadir esta señal — actualmente no existe)
-#   referenced_by: design/gdd/vinculacion-demonios.md (BindingSystem resetea _edrick_alive=true al recibirla)
+#   referenced_by: design/gdd/vinculacion-demonios.md (BindingSystem resetea _edrick_alive=true al recibirla), design/gdd/transformacion-visual-edrick.md (resincroniza capas post-respawn)
 #   added: 2026-05-29
 #   notes: Necesaria porque BindingSystem es Autoload — _ready() se ejecuta solo al arrancar la app.
 #          Sin esta señal, ningún binding es posible tras la primera muerte de Edrick en la sesión.
@@ -781,7 +794,7 @@ constants:
 
 # loadout_changed(equipped_demons: Array[String], gato_available: bool)
 #   source: design/gdd/loadout-build-management.md (Loadout emite al finalizar SWAP_ANIM_DURATION o cuando gato_available cambia)
-#   referenced_by: design/gdd/motor-sinergias.md (único trigger de reevaluación del Motor)
+#   referenced_by: design/gdd/motor-sinergias.md (único trigger de reevaluación del Motor), design/gdd/transformacion-visual-edrick.md (trigger de actualización de capas)
 #   added: 2026-05-28
 #   notes: gato_available: bool añadido durante diseño de GDD #11. GDD #10 §3.3 pendiente actualizar para reflejar nuevo payload. Loadout re-emite con mismo equipped_demons si solo cambia gato_available.
 
@@ -807,7 +820,7 @@ constants:
 # demon_bound(demon_id: String)
 #   source: design/gdd/vinculacion-demonios.md (emitida tras Registro para todos los demonios)
 #   additional_emitter: design/gdd/progresion-narrativa.md (GDD #16 — emite demon_bound("cat") directamente para el Gato)
-#   referenced_by: design/gdd/loadout-build-management.md, design/gdd/motor-sinergias.md
+#   referenced_by: design/gdd/loadout-build-management.md, design/gdd/motor-sinergias.md, design/gdd/transformacion-visual-edrick.md (dispara POST_BINDING crossfade)
 #   added: 2026-05-29
 #   notes: Señal downstream primaria de este sistema. Siempre emitida DESPUÉS de escribir en world_state.available_demons (AC-VD-023). GDD #16 es co-emisor solo para "cat".
 
