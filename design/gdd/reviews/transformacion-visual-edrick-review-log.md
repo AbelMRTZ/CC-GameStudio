@@ -2,6 +2,21 @@
 
 ---
 
+## Review — 2026-05-31 (segunda revisión) — Verdict: APPROVED
+
+Scope signal: L
+Specialists: game-designer, systems-designer, qa-lead, gameplay-programmer, art-director, creative-director
+Blocking items resueltos: 9 | Recommended resueltos: 6 | Cross-GDD pendientes: 2 (P-TVE-07, P-TVE-08)
+Summary: La segunda revisión confirmó que la primera revisión resolvió los problemas estructurales. Los nuevos blockers encontrados fueron: contradicción Fantasy/Swap resuelta con reencuadre Option A (la permanencia vive en la corrupción moral, no en el slot); AC-TVE-022/027 no reflejaban la corrección de Dash sprite_tint del ciclo anterior (corregidos + AC-TVE-041 añadido); AC-TVE-001 testeaba el modelo snap antiguo (reescrito para modelo de blend progresivo); cuatro guards de fórmula para prevenir crashes (N_active=0, BLEND_SCALE>1, BINDING_AURA_TRANSITION=0, N_active unificado con F-TVE-02); §6.5 relabeled de "bajo impacto" a ALTO para el retrofit de GDD #3. El CD verificó que P-TVE-06 era stale (señal existe en GDD #2). POST_BINDING crossfade ahora especificado como "antes de reanudar gameplay" con P-TVE-08 para GDD #13. Items de Art Direction (Vision aura sobre fondos oscuros, Screen vs Soft Light, z-order de capas) downgraded a gates de producción de assets, no de aprobación.
+Prior verdict resolved: Sí — segunda revisión del ciclo 2026-05-31
+
+### Pre-implementación gates requeridos (cross-GDD, coordinación Productor)
+- P-TVE-07: GDD #10 debe añadir `loadout_swap_started` + reconciliar Rule 11 y CA-LBM-029a
+- P-TVE-08: GDD #13 debe retardar resume del gameplay por `BINDING_AURA_TRANSITION` segundos post-`demon_bound`
+- GDD #3 + GDD #13 deben enmendarse de forma coordinada para el retrofit del schema `transformacion_visual` (ADR tres vías)
+
+---
+
 ## Review — 2026-05-31 — Verdict: MAJOR REVISION NEEDED → Revisiones aplicadas
 
 Scope signal: L

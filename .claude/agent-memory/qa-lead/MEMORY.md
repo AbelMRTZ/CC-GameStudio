@@ -1,3 +1,5 @@
 - [GDD #15 AC Authoring](project-gdd15-acs.md) — 15 ACs authored for NPC & Dialogue system; 10 blocking unit/integration tests identified
+- [GDD #16 AC Authoring](project-gdd16-acs.md) — 22 ACs authored for Narrative Progression system; R1-R7 and F1-F4 fully covered; 10 blocking tests
+- [GDD #18 AC Authoring](project-gdd18-acs.md) — 30 ACs for HUD de Combate; 20 BLOCKING, 10 ADVISORY; all 6 rules and 4 formulas covered
 - [QA Gate: Branch Selection & Reputation Must Pass Before Kingdom 2 Content](feedback-pre-vs-gate.md) — CA-NPC-004 through CA-NPC-010 are hard gate before Vertical Slice narrative content
 - [Test Infrastructure Pattern](feedback-test-infrastructure.md) — WorldStateMock injection pattern required for NPC dialogue unit tests

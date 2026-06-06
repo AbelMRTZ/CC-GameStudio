@@ -2,7 +2,7 @@
 
 > **Status**: Aprobado
 > **Creado**: 2026-05-24
-> **Última Actualización**: 2026-05-26
+> **Última Actualización**: 2026-06-04
 > **Concepto Fuente**: design/gdd/game-concept.md
 
 ---
@@ -28,13 +28,13 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 | 9 | Cámara (inferred) | Core | MVP | Aprobado | [camara.md](camara.md) | Movimiento, Exploración |
 | 10 | Loadout & Build Management | Gameplay | MVP | Aprobado | [loadout-build-management.md](loadout-build-management.md) | Base de Datos de Demonios, Estado del Mundo |
 | 11 | Motor de Sinergias | Gameplay | MVP | Aprobado | [motor-sinergias.md](motor-sinergias.md) | Base de Datos de Demonios, Loadout |
-| 12 | Guardado y Carga (inferred) | Persistence | MVP | En Revisión | [guardado-y-carga.md](guardado-y-carga.md) | Estado del Mundo |
+| 12 | Guardado y Carga (inferred) | Persistence | MVP | Aprobado | [guardado-y-carga.md](guardado-y-carga.md) | Estado del Mundo |
 | 13 | Vinculación de Demonios | Gameplay | MVP | Aprobado | [vinculacion-demonios.md](vinculacion-demonios.md) | Base de Datos de Demonios, Motor de Sinergias, Combate |
-| 14 | Transformación Visual de Edrick | Gameplay | MVP | En Revisión | [transformacion-visual-edrick.md](transformacion-visual-edrick.md) | Loadout, Base de Datos de Demonios |
+| 14 | Transformación Visual de Edrick | Gameplay | MVP | Aprobado | [transformacion-visual-edrick.md](transformacion-visual-edrick.md) | Loadout, Base de Datos de Demonios |
 | 15 | Sistema de NPC y Diálogo | Narrative | MVP | Aprobado | [sistema-npc-dialogo.md](sistema-npc-dialogo.md) | Estado del Mundo |
-| 16 | Progresión Narrativa | Narrative | MVP | No Iniciado | — | Estado del Mundo, Vinculación, NPC y Diálogo |
+| 16 | Progresión Narrativa | Narrative | MVP | Aprobado | [progresion-narrativa.md](progresion-narrativa.md) | Estado del Mundo, Vinculación, NPC y Diálogo |
 | 17 | Cinemáticas | Narrative | MVP | No Iniciado | — | Cámara, Progresión Narrativa, Audio |
-| 18 | HUD de Combate (inferred) | UI | MVP | No Iniciado | — | Combate, Salud/Daño, Loadout |
+| 18 | HUD de Combate (inferred) | UI | MVP | Diseñado | [hud-combate.md](hud-combate.md) | Combate, Salud/Daño, Loadout |
 | 19 | Bestiario | UI | MVP | No Iniciado | — | Base de Datos de Demonios, Motor de Sinergias, Progresión Narrativa |
 | 20 | Build Management UI (inferred) | UI | MVP | No Iniciado | — | Loadout, Transformación Visual |
 | 21 | Menú Principal y Pausa (inferred) | UI | MVP | No Iniciado | — | Guardado/Carga |
@@ -43,6 +43,10 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 | 24 | Mapa (inferred) | UI | Vertical Slice | No Iniciado | — | Exploración, Estado del Mundo |
 | 25 | Tutorial Integrado (inferred) | Meta | Alpha | No Iniciado | — | Combate, Exploración, Vinculación |
 | 26 | Accesibilidad (inferred) | Meta | Full Vision | No Iniciado | — | Toda la UI |
+| 27 | Sigilo | Gameplay | MVP | No Iniciado | — | Movimiento, IA Enemigos, Estado del Mundo |
+| 28 | Atuendos y Disfraz | Gameplay | MVP | No Iniciado | — | Sigilo (#27), Estado del Mundo, NPC y Diálogo |
+| 29 | Compañero (El Gato) | Gameplay | MVP | No Iniciado | — | Movimiento, IA Enemigos, Combate, Progresión Narrativa |
+| 30 | Asedios / Batalla Masiva | Gameplay | MVP | No Iniciado | — | Combate, IA Enemigos, Estado del Mundo |
 
 ---
 
@@ -51,7 +55,7 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 | Categoría | Descripción | Sistemas en Este Juego |
 |-----------|-------------|------------------------|
 | **Core** | Sistemas fundamentales de los que todo depende | Movimiento, Salud/Daño, Base de Datos de Demonios, Estado del Mundo, Cámara |
-| **Gameplay** | Sistemas que hacen el juego divertido | Combate, IA de Enemigos, Exploración, Loadout, Motor de Sinergias, Vinculación, Transformación Visual, Restricción por Demonio |
+| **Gameplay** | Sistemas que hacen el juego divertido | Combate, IA de Enemigos, Exploración, Loadout, Motor de Sinergias, Vinculación, Transformación Visual, Sigilo, Atuendos y Disfraz, Compañero (El Gato), Asedios / Batalla Masiva, Restricción por Demonio |
 | **Narrative** | Historia y entrega de diálogo | NPC y Diálogo, Progresión Narrativa, Cinemáticas, Seguimiento Moral |
 | **Persistence** | Estado guardado y continuidad | Guardado y Carga |
 | **UI** | Displays de información para el jugador | HUD, Bestiario, Build Management UI, Menú Principal/Pausa, Mapa |
@@ -92,6 +96,7 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 5. **Loadout & Build Management** — depende de: Base de Datos de Demonios
 6. **Motor de Sinergias** — depende de: Base de Datos de Demonios, Loadout
 7. **Guardado y Carga** — depende de: Estado del Mundo (serializa todo el estado activo)
+8. **Sigilo** — depende de: Movimiento, IA Enemigos, Estado del Mundo
 
 ### Capa Feature (depende de Core)
 
@@ -102,6 +107,9 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 5. **Seguimiento Moral** — depende de: Estado del Mundo, Progresión Narrativa, NPC y Diálogo
 6. **Cinemáticas** — depende de: Cámara, Progresión Narrativa, Audio
 7. **Restricción por Demonio** — depende de: Loadout, Estado del Mundo, Exploración
+8. **Atuendos y Disfraz** — depende de: Sigilo, Estado del Mundo, NPC y Diálogo
+9. **Compañero (El Gato)** — depende de: Movimiento, IA Enemigos, Combate, Progresión Narrativa
+10. **Asedios / Batalla Masiva** — depende de: Combate, IA Enemigos, Estado del Mundo
 
 ### Capa Presentation (depende de Feature)
 
@@ -147,8 +155,14 @@ Demons Of Dravaryn es una aventura narrativa 2D con combate en tiempo real y un 
 | 21 | Mapa | Vertical Slice | Presentation | S |
 | 22 | Tutorial Integrado | Alpha | Polish | M |
 | 23 | Accesibilidad | Full Vision | Polish | M |
+| 24 | Sigilo | MVP | Core | M |
+| 25 | Atuendos y Disfraz | MVP | Feature | S |
+| 26 | Compañero (El Gato) | MVP | Feature | M |
+| 27 | Asedios / Batalla Masiva | MVP | Feature | M |
 
 *Esfuerzo: S = 1 sesión, M = 2-3 sesiones, L = 4+ sesiones. Una "sesión" es una conversación de diseño enfocada que produce un GDD completo.*
+
+> ⚠ **Sistemas 24–27** identificados durante el diseño narrativo del Acto 1. Son todos **MVP** y deben diseñarse **antes** que los sistemas de Presentation (#15–18 en esta tabla). Orden interno obligatorio: Sigilo (#24) antes que Atuendos (#25). El Gato (#26) y Asedios (#27) pueden diseñarse en paralelo entre sí y con el par anterior.
 
 ---
 
@@ -167,6 +181,8 @@ Ninguna detectada. El grafo de dependencias es un DAG (Directed Acyclic Graph) l
 | **Progresión Narrativa** | Diseño + Alcance | La ramificación narrativa (elecciones que se propagan) puede volverse inmanejable | Limitar el seguimiento moral a tono de diálogo y reacción de NPC — un final, múltiples rutas sutiles. Documento de arco de personaje detallado antes de GDD. |
 | **Vinculación de Demonios** | Diseño | El momento de binding es el núcleo del Pilar 2. Si no se siente especial y ganado, el sistema pierde su peso narrativo | Cada binding es un momento narrativo único, no un drop de loot. Diseñar la secuencia visual/audio del binding en el GDD antes de la implementación. |
 | **Base de Datos de Demonios** | Alcance | Sistema cuello de botella — 5 sistemas dependen de él. Una estructura de datos mal diseñada aquí genera deuda técnica en cascada | Diseñar el schema de datos completo (atributos, habilidades, sinergias, transformaciones visuales) antes de cualquier implementación. Validar con un ADR. |
+| **Sigilo** | Diseño + Feel | La percepción de detección debe ser inequívoca — una zona de visión injusta destruye M.1.2.1 (el tutorial del juego). Es el primer contacto real del jugador con el gameplay: si el sigilo no se siente justo desde el minuto uno, la confianza se rompe antes de que el juego arranque. | Prototipar la detección con valores extremos antes de escribir el GDD. Pregunta de validación: ¿el jugador siempre sabe por qué fue detectado? Si la respuesta es "no siempre", recalibrar las zonas y los tiempos de reacción. |
+| **Compañero (El Gato)** | IA + Alcance | Combinar IA de combate, navegación, interacciones con entorno y aparición condicionada por narrativa es el sistema de mayor complejidad técnica en la Feature layer. Un compañero que se queda atascado, ataca en mal momento o aparece fuera de su ventana narrativa quiebra el Pilar 1 en los momentos más visibles del juego. | MVP limita al Gato a comportamiento scriptado por fases narrativas (no IA emergente). El GDD debe especificar exactamente qué puede y no puede hacer en cada fase — sin comportamiento emergente no definido. Diferir IA autónoma a post-MVP. |
 
 ---
 
@@ -174,13 +190,13 @@ Ninguna detectada. El grafo de dependencias es un DAG (Directed Acyclic Graph) l
 
 | Métrica | Cantidad |
 |---------|----------|
-| Total sistemas identificados | 26 |
-| GDDs iniciados | 15 |
-| GDDs en revisión | 2 |
-| GDDs aprobados | 11 |
-| GDDs diseñados (pendiente revisión) | 2 |
+| Total sistemas identificados | 30 |
+| GDDs iniciados | 17 |
+| GDDs en revisión | 0 |
+| GDDs aprobados | 14 |
+| GDDs diseñados (pendiente revisión) | 3 |
 | GDDs NEEDS REVISION | 0 |
-| Sistemas MVP diseñados | 15 / 21 |
+| Sistemas MVP diseñados | 16 / 25 |
 | Sistemas Vertical Slice diseñados | 0 / 3 |
 | Sistemas Alpha diseñados | 0 / 1 |
 | Sistemas Full Vision diseñados | 0 / 1 |

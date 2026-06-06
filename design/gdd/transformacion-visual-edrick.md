@@ -1,8 +1,8 @@
 # GDD: Transformación Visual de Edrick
 
-> **Status**: En Revisión (NEEDS REVISION — revisión completada 2026-05-31)
+> **Status**: Aprobado (segunda revisión 2026-05-31 — 9 blockers resueltos; P-TVE-07/08 pendientes de coordinación Productor)
 > **Author**: Abel + Claude Code Agents
-> **Last Updated**: 2026-05-31 (revisión post-review: anchor moment, Dash tint, POST_BINDING, fórmulas)
+> **Last Updated**: 2026-05-31 (segunda revisión: reencuadre Fantasy/Swap §2, timing POST_BINDING, guards de fórmula F-TVE-01/04, N_active unificado, ACs de Dash corregidos, P-TVE-06 cerrado, P-TVE-08 añadido)
 > **Implements Pillar**: Pilar 2 — Demonios como Poder Transformador; Pilar 5 — Transformación Moral de Edrick
 > **Milestone**: MVP — Feature Layer
 > **Depende de**: Loadout & Build Management (#10), Base de Datos de Demonios (#3)
@@ -26,13 +26,15 @@ El sistema está además preparado para la capa de **corrupción moral** (GDD #2
 
 La transformación visual es la **confirmación de que el cambio es real**. No la promesa de un poder nuevo: la evidencia de que algo en Edrick ya no es como antes.
 
-Cuando el jugador equipa un demonio y ve cómo el sprite de Edrick se altera — ojos que brillan con una luz que no era suya, runas que orbitan sus hombros, un tono en la piel que no existía hace un momento — no siente que "desbloqueó algo". Siente que *cargó con algo*. La transformación visible es el juego diciendo: *"Esto no se puede deshacer. Ahora eso es parte de ti."*
+Cuando el jugador equipa un demonio y ve cómo el sprite de Edrick se altera — ojos que brillan con una luz que no era suya, runas que orbitan sus hombros, un tono en la piel que no existía hace un momento — no siente que "desbloqueó algo". Siente que *eligió algo*. La transformación visible es el juego mostrando, sin texto, quién está eligiendo ser Edrick en este momento.
 
-Esa incomodidad es intencional. El jugador quiere el poder. Pero la transformación visual le recuerda, sin texto y sin UI, cuánto de Edrick está cediendo para tenerlo. La fantasy opera en esa tensión: el placer de ver a tu personaje volverse más poderoso, mezclado con el leve malestar de que ya no reconoces completamente quién es.
+El slot no está bloqueado — el jugador puede swappear el demonio. Pero la visual acumula: cada equip deja su marca momentánea y reconocible en el sprite; cada *binding* (§3.4 POST_BINDING) deja su marca permanente en el nivel de corrupción moral de Edrick. La permanencia vive en la corrupción, no en el slot. La tensión visual — "¿es esto lo que quiero que sea Edrick?" — no necesita un candado mecánico para ser real. La necesita el jugador.
+
+Esa incomodidad es intencional. El jugador quiere el poder. Pero la transformación visible le recuerda, sin texto y sin UI, qué está eligiendo portrar. La fantasy opera en esa tensión: el placer de ver a tu personaje en su forma más poderosa, mezclado con el leve reconocimiento de que ya no sabes completamente quién es.
 
 Con múltiples demonios activos, la fantasy se extiende: el jugador ve un Edrick **compuesto**, portador de más de una marca. Eso se debe sentir acumulativo — no como una paleta de colores revuelta, sino como capas de identidad superpuestas, cada una legible pero todas presentes. La build de demonios se hace visible. La elección del jugador se imprime en el personaje.
 
-**Momento ancla**: el jugador swappea un demonio mid-exploración, ve a Edrick cambiar durante la animación de 0.8 segundos, y antes de que la animación termine ya se está preguntando si quiere este cambio o si prefería cómo se veía antes. Esa duda es el éxito del sistema.
+**Momento ancla**: el jugador swappea un demonio mid-exploración, ve a Edrick cambiar durante la animación de 0.8 segundos, y antes de que la animación termine ya se está preguntando si quiere este cambio o si prefería cómo se veía antes. Esa duda no es sobre si "puede volver atrás" — puede. Es sobre identidad: *¿este Edrick se parece más a mí?* Ese reconocimiento es Pilar 2 en acción.
 
 **Alineación de pilares**: Pilar 2 — *"Transformación visible — cuando equipas un demonio, Edrick se ve diferente, se siente diferente"*. Pilar 5 — *"la corrupción se siente necesaria, incluso ganada"* — la acumulación visual de marcas demoníacas debe sentirse como el precio pagado, no como una colección de badges.
 
@@ -75,7 +77,9 @@ La transformación visual **es** la animación, no una actualización al finaliz
 2. **Al recibir `loadout_changed(equipped_demons, gato_available)`** (señal existente, emitida por GDD #10 al **FINAL** de SWAP_ANIM): el sistema bloquea las capas nuevas al 100% y descarta las anteriores.
 3. **Al recibir `demon_bound(demon_id)`**: handoff del aura post-binding. Ver §3.4.
 
-**⚠ Dependencia de GDD #10 (P-TVE-07)**: La señal `loadout_swap_started` es nueva y debe ser añadida a GDD #10 antes del primer sprint de implementación.
+**⚠ Dependencia de GDD #10 (P-TVE-07)**: La señal `loadout_swap_started` es nueva y debe ser añadida a GDD #10 antes del primer sprint de implementación. **Nota de conflicto:** GDD #10 (aprobado) Rule 11 y CA-LBM-029a establecen que todos los cambios aplican al finalizar la animación — esto incluye "transformación visual." Ese texto contradice el modelo de blend progresivo de este GDD, donde los cambios visuales COMIENZAN al iniciar la animación. GDD #10 debe enmendarse explícitamente para: (a) añadir `loadout_swap_started` como señal emitida al inicio de SWAP_ANIM, (b) clarificar que Rule 11 aplica a cambios de estado mecánico (stats, HP, sinergias) — no a los parámetros visuales de blend progresivo, y (c) actualizar CA-LBM-029a para documentar la nueva señal. Coordinación de Productor requerida.
+
+**Especificación de N_active durante TRANSITION:** Durante el estado TRANSITION, cada conjunto de capas (antiguo y nuevo) calcula su propio N_active de forma independiente — el conjunto antiguo usa el número de demonios del loadout anterior con esa capa no-null; el conjunto nuevo usa el número del loadout entrante. Los conjuntos no se mezclan en el mismo N_active. La intensidad efectiva de cada capa se multiplica además por el factor de blend temporal (0.0→1.0 para capas nuevas, 1.0→0.0 para capas antiguas).
 
 ---
 
@@ -184,7 +188,7 @@ donde `N_activos_en_capa` = número de demonios equipados con esa capa como no-n
 - **Trigger**: señal `demon_bound(demon_id)` del EventBus
 - **Mecanismo**: sobreescritura de los parámetros del shader del sprite de Edrick con animación de crossfade
 - **GDD #13 no emite ninguna señal adicional de "release"** — su responsabilidad termina al emitir `demon_bound`
-- El handoff ocurre post-descongelación del mundo (después de que el gameplay reanuda)
+- **El handoff ocurre ANTES de que el mundo reanude (decisión 2026-05-31).** El crossfade de F-TVE-04 (0.5s) completa mientras `get_tree().paused = true`. El gameplay reanuda cuando el crossfade finaliza. Implementación recomendada: GDD #13 hace `await get_tree().create_timer(BINDING_AURA_TRANSITION).timeout` después de emitir `demon_bound`, antes de llamar `get_tree().paused = false`. **⚠ Dependencia de GDD #13 (P-TVE-08):** GDD #13 debe enmendarse para incorporar este delay.
 
 **Nota de implementación — cancelación del crossfade (ver AC-TVE-029):**
 Si `loadout_changed` llega mientras el crossfade está en curso, la implementación debe cancelarlo. Antes de escribir el código, decidir entre: (a) llamar `crossfade_tween.kill()` y resetear opacidades, (b) usar un flag `_crossfade_active` que el Tween chequea en cada step, o (c) ambos. La decisión tiene implicaciones en el comportamiento edge case de frames parciales — documentar en el ADR correspondiente.
@@ -210,18 +214,25 @@ Si `loadout_changed` llega mientras el crossfade está en curso, la implementaci
 Cuando N demonios aportan la misma capa, cada uno aplica su intensidad proporcional:
 
 ```
+# Guards de implementación (aplicar ANTES de la fórmula):
+if N_active == 0: return 0.0          # Previene división entera por cero (crash en GDScript)
+BLEND_SCALE = clamp(BLEND_SCALE, 0.0, 1.0)  # Evita inversión de intensidad si config > 1.0
+
 intensity_effective_i = intensity_base_i × (1 / N_active) × BLEND_SCALE
+intensity_effective_i = min(intensity_effective_i, MAX_BLEND_INTENSITY)  # Cap final
 ```
+
+**Definición de "capa activa" para N_active**: una capa se considera activa (se cuenta en N_active) si y solo si el campo correspondiente del schema §3.2 es **no-null AND su campo de intensidad/peso principal es > 0.0** (`intensity > 0.0` para `aura_bg`, `blend_weight > 0.0` para `sprite_tint`, etc.). Esto garantiza consistencia con F-TVE-02, que ignora capas con `blend_weight = 0.0`. Un demonio con struct no-null pero intensidad cero NO se cuenta en N_active.
 
 **Variables:**
 | Variable | Símbolo | Tipo | Rango | Descripción |
 |----------|---------|------|-------|-------------|
 | Intensidad base del demonio i | `intensity_base_i` | float | [0.0, 1.0] | Valor del campo `intensity` en schema §3.2 |
-| N demonios activos en esta capa | `N_active` | int | [1, 5] | Demonios equipados con esa capa como no-null |
-| Factor de escala de blend | `BLEND_SCALE` | float | [0.5, 1.0] | Tuning knob global. 1.0 = puramente proporcional |
+| N demonios activos en esta capa | `N_active` | int | [1, 5] | Demonios con esa capa no-null **Y** intensidad/peso > 0.0 |
+| Factor de escala de blend | `BLEND_SCALE` | float | [0.5, 1.0] | Tuning knob global. Clampeado a [0.0, 1.0] internamente. 1.0 = puramente proporcional |
 | Intensidad efectiva | `intensity_effective_i` | float | [0.0, 1.0] | Valor final aplicado a la capa |
 
-**Rango de salida:** (0.0, MAX_BLEND_INTENSITY] = (0.0, 0.9] — con BLEND_SCALE ≤ 1.0 (ver §7), el factor `1/N` garantiza que `intensity_effective_i ≤ intensity_base_i`; MAX_BLEND_INTENSITY actúa como cap final antes del shader para el caso boundary `intensity_base=1.0, N=1`.
+**Rango de salida:** (0.0, MAX_BLEND_INTENSITY] = (0.0, 0.9] — con BLEND_SCALE clampeado a ≤ 1.0, el factor `1/N` garantiza que `intensity_effective_i ≤ intensity_base_i`; MAX_BLEND_INTENSITY actúa como cap final. Con BLEND_SCALE > 1.0 en la configuración, el clamp interno previene que multi-demonio resulte más brillante que mono-demonio.
 
 **Ejemplo (MVP, N=2):** Fuego (`intensity=0.7`) + Arcano (`intensity=0.8`), BLEND_SCALE=1.0
 - Fuego efectivo: `0.7 × 0.5 = 0.35`
@@ -250,7 +261,7 @@ C_tint_out = Σ(C_i × w_i_norm,  para i = 1..N)
 
 **Rango de salida:** siempre dentro del gamut de color por construcción. Sin riesgo de overflow.
 
-**Guard contra división por cero**: si `Σ(blend_weight_j) = 0.0` (todos los pesos son cero), el sistema trata el tinte como null y no aplica ninguna modificación. Esta condición puede ocurrir con `blend_weight=0.0` configurado en el schema. La implementación debe verificar `Σ > 0.0` antes de la división.
+**Guard contra división por cero**: si `Σ(blend_weight_j) = 0.0` (todos los pesos son cero), el sistema trata el tinte como null y no aplica ninguna modificación. Esta condición se previene también a nivel de conteo: un demonio con `blend_weight = 0.0` **no cuenta en N_active** (ver definición unificada en F-TVE-01). La implementación debe verificar `Σ > 0.0` antes de la división como guard de último recurso.
 
 **Por qué weighted average, no promedio aritmético**: Fuego (naranja) + Hielo (azul/blanco) con promedio aritmético produce gris neutro. El weighted average preserva la identidad del demonio con mayor `blend_weight`.
 
@@ -291,6 +302,12 @@ Decay exponencial produce una estela con "cabeza" clara y cola difuminada — m�
 Transición suavizada (ease-out / smoothstep) entre la distorsión de GDD #13 y el aura permanente del demonio:
 
 ```
+# Guard de implementación:
+if BINDING_AURA_TRANSITION <= 0.0:
+    opacity_gdd13 = 0.0
+    opacity_demon = 1.0
+    return  # Snap instantáneo — evita división por cero
+
 t_norm = clamp(t / BINDING_AURA_TRANSITION, 0.0, 1.0)
 s = smoothstep(0.0, 1.0, t_norm)           -- 3t² - 2t³; nativo en Godot
 
@@ -309,6 +326,10 @@ opacity_demon(t) = s                       -- fade-in del aura permanente
 | Opacidad aura permanente | `opacity_demon(t)` | float | [0.0, 1.0] | 0.0 → 1.0 durante el crossfade |
 
 **Invariante:** `opacity_gdd13(t) + opacity_demon(t) = 1.0` en todo momento — la luminosidad total se conserva.
+
+**Nota de implementación — opacidad inicial real:** La fórmula asume `opacity_gdd13(t=0) = 1.0`. La implementación debe leer la opacidad actual del shader de GDD #13 en el momento de recibir `demon_bound` y usarla como punto de partida real — no hardcodear 1.0. Si por cualquier razón la distorsión de GDD #13 está a una opacidad parcial al emitir `demon_bound`, el invariante se preserva usando ese valor como `opacity_start` y escalando: `opacity_gdd13(t) = opacity_start × (1.0 - s)`.
+
+**Nota de implementación — single-Tween:** Ambas opacidades deben derivarse del mismo `t_norm` en el mismo frame. Usar dos tracks de `tween_property()` independientes en distintos nodos puede causar desincronización entre frames. Usar un único `tween_method()` que calcula ambos valores de un solo `t_norm` por step.
 
 **Caso especial — demonio sin `aura_bg` (Dash):** `opacity_demon` llega a 1.0 pero la capa es null. La distorsión de GDD #13 hace fade-out a transparente sin reemplazarse. Sin lógica adicional.
 
@@ -357,7 +378,7 @@ C_eye_out = HSVtoRGB(H_out, S_out, V_out)
 
 **E4 — Visión a N=2 (intensidad efectiva muy baja)** `[🎨 AD]`
 **Si** Visión (`aura_bg intensity=0.3`) está equipado junto a otro demonio, la intensidad efectiva es `0.3 × 0.5 = 0.15` — potencialmente tenue hasta el límite de lo invisible. El sistema aplica el valor correctamente.
-> **Decisión de Arte requerida antes de producción**: validar en pantalla si `intensity=0.15` para la distorsión de Visión es legible o desaparece. Si no es legible, ajustar `intensity` de Visión en GDD #3 o el `BLEND_SCALE` global (§7). No tocar el código — el problema se resuelve en los datos del schema.
+> **Decisión de Arte requerida antes de producción**: validar en pantalla si `intensity=0.15` para la distorsión de Visión es legible o desaparece. Si no es legible, ajustar `intensity_base` de Visión en `demons.json` (GDD #3). **No ajustar BLEND_SCALE global** — BLEND_SCALE > 1.0 está prohibido (causa inversión de intensidad con N≥2, ver F-TVE-01 guard). No tocar código — el problema se resuelve en los datos del schema.
 
 **E5 — `demon_bound` recibido para un demonio ya en `equipped_demons`**
 **Si** `demon_bound(demon_id)` llega con un ID ya activo (bug en GDD #13 o race condition), **entonces** el sistema ignora el evento. Guard: verificar `equipped_demons.has(demon_id)` antes de entrar a POST_BINDING. Sin decisión de Arte.
@@ -426,7 +447,7 @@ C_eye_out = HSVtoRGB(H_out, S_out, V_out)
 
 | Deuda | Impacto | Resolución |
 |-------|---------|-----------|
-| GDD #3 usa `aura: string` en lugar del schema §3.2 | Bajo — tratado como `aura_bg.color` hasta retrofit | Retrofittar GDD #3 antes del primer sprint de implementación de assets |
+| GDD #3 usa `aura: string` en lugar del schema §3.2 | **ALTO** — GDD #13 lee `transformacion_visual.aura` en runtime durante la secuencia de binding. Reemplazarlo por `aura_bg.color` sin coordinar con GDD #13 causa crash en el path de runtime de binding. Requiere ADR de tres vías (GDD #3 + GDD #13 + GDD #14) coordinado por Productor. | Enmendar GDD #3 + GDD #13 de forma coordinada antes del primer sprint. |
 | Hook de `corruption_level` sin implementar en MVP | Ninguno en MVP | Activar al diseñar GDD #22 |
 | API de previsualización para GDD #20 no especificada | Bajo — GDD #20 aún no diseñado | Definir en GDD #20 |
 
@@ -440,10 +461,10 @@ Todos los valores deben estar en configuración externa (archivo de datos o expo
 
 | Parámetro | Valor MVP | Rango Seguro | Qué rompe si... |
 |-----------|-----------|-------------|-----------------|
-| `BLEND_SCALE` | 1.0 | [0.5, 1.0] | **<0.5**: capas multi-demonio son casi invisibles. **>1.0**: no permitido (cap en 1.0). Para compensar capas tenues (ej. Visión en E4), ajustar `intensity_base` en demons.json por demonio en lugar de subir BLEND_SCALE globalmente. El valor 1.0 es puramente proporcional. |
+| `BLEND_SCALE` | 1.0 | [0.5, 1.0] | **<0.5**: capas multi-demonio son casi invisibles. **>1.0: prohibido — F-TVE-01 lo clampea a 1.0 internamente.** Si el config excede 1.0, el clamp previene que multi-demonio resulte más brillante que mono-demonio (inversión de intent). Para compensar capas tenues (ej. Visión en E4), ajustar `intensity_base` en `demons.json` por demonio, **no** subir BLEND_SCALE global. El valor 1.0 es puramente proporcional. |
 | `MAX_BLEND_INTENSITY` | 0.9 | [0.5, 1.0] | **<0.5**: limita tanto las auras combinadas que se pierden visualmente. **>1.0** (sin límite): con dos demonios de alta intensidad puede producir auras que opacan el sprite base. Actúa como cap final tras aplicar F-TVE-01. |
 | `DECAY_RATE` | 0.5 | [0.3, 0.8] | **<0.3**: estela muy corta, el efecto desaparece casi inmediatamente. **>0.8**: los ghost frames más antiguos son casi tan visibles como el más reciente — la estela parece "plana" en vez de disolverse. |
-| `BINDING_AURA_TRANSITION` | 0.5 s | [0.3, 0.8] s | **<0.3s**: el crossfade es tan rápido que el jugador no lo percibe — la distorsión de GDD #13 desaparece abruptamente. **>0.8s**: el aura permanente tarda en asentarse, creando disonancia entre el gameplay reanudado y la visual aún en transición. |
+| `BINDING_AURA_TRANSITION` | 0.5 s | [0.3, 0.8] s | **<0.3s**: el crossfade es tan rápido que el jugador no lo percibe — la distorsión de GDD #13 desaparece abruptamente. **>0.8s**: el crossfade tarda demasiado, aumentando el tiempo que el gameplay permanece pausado post-binding (el mundo no reanuda hasta que completa el crossfade — ver §3.4) — el jugador percibe el mundo congelado durante demasiado tiempo después de vincular. |
 
 ### 7.2 Parámetros por Demonio (en `demons.json` — GDD #3)
 
@@ -451,7 +472,7 @@ Todos viven en el campo `transformacion_visual` del schema §3.2. Cambiarlos sol
 
 | Campo | Rango Seguro | Qué rompe si... |
 |-------|-------------|-----------------|
-| `aura_bg.intensity` | [0.0, 1.0] | **<0.1**: aura imperceptible incluso en SINGLE_DEMON. **>0.9** con BLEND_SCALE>1: puede opacar el sprite en multi-demonio. |
+| `aura_bg.intensity` | [0.0, 1.0] | **<0.1**: aura imperceptible incluso en SINGLE_DEMON. **>0.9**: en SINGLE_DEMON puede opacar ligeramente el sprite base; en multi-demonio se normaliza vía F-TVE-01, y MAX_BLEND_INTENSITY=0.9 actúa como cap. |
 | `sprite_tint.blend_weight` | [0.0, 0.4] | **>0.4**: el tinte empieza a "lavar" el sprite base, perdiendo detalles del personaje. **0.0**: tinte invisible (usar null si no se quiere tinte). |
 | `floating_fx.count` | [1, 12] | **>12**: demasiados nodos simultáneos; riesgo de rendimiento combinado con otros efectos. **<1**: usar null si no se quieren flotantes. |
 | `floating_fx.orbit_radius` | [16, 64] px | **<16px**: los flotantes se superponen con el sprite de Edrick (ilegibles). **>64px**: sobresalen demasiado del personaje, contaminan el fondo. Separación mínima entre dos demonios: 12px (ver E8). |
@@ -586,7 +607,7 @@ Antes de producir assets:
 
 ## 9. Criterios de Aceptación
 
-> **Revisado por especialistas completo (2026-05-31). Conteo actualizado post-revisión: 40 ACs.**
+> **Revisado por especialistas completo (2026-05-31). Conteo actualizado segunda revisión: 41 ACs.**
 >
 > **Flag de implementación**: AC-TVE-029 — la cancelación del crossfade debe implementarse vía `Tween.kill()` + flag `_crossfade_active` (Opción C — mandatado por revisión). Ver P-TVE-01 en §10.
 >
@@ -598,8 +619,9 @@ Antes de producir assets:
 
 ### Grupo A — Timing y Control de Estado
 
-**AC-TVE-001** — Capas no cambian antes de finalizar SWAP_ANIM_DURATION
-**GIVEN** Edrick tiene Fuego equipado (aura_bg naranja activa), **WHEN** `loadout_changed` es recibido y han transcurrido menos de 0.8 s, **THEN** los parámetros del shader no cambian hasta que se cumplen los 0.8 s completos.
+**AC-TVE-001** — El estado mecánico (HP, sinergias) no cambia durante TRANSITION
+**GIVEN** Edrick tiene Fuego equipado (HP_MAX=80, sinergia Fuego activa), **WHEN** `loadout_swap_started([Arcano])` es recibido y han transcurrido menos de 0.8 s, **THEN** HP_MAX sigue siendo 80 y las sinergias activas no han cambiado (Fuego sigue activo, Arcano aún no aplica) — solo los parámetros visuales están en proceso de blend progresivo.
+*(Nota: el blend visual EMPIEZA al recibir `loadout_swap_started`, no al finalizar. El estado mecánico cambia al recibir `loadout_changed` a t=0.8s. Este AC verifica la separación mecánica, no la visual. Ver AC-TVE-004 para el blend visual.)*
 **Tipo**: Unit | **Bloquea**: Sí
 
 **AC-TVE-002** — Las capas se actualizan al finalizar SWAP_ANIM_DURATION
@@ -644,6 +666,11 @@ Antes de producir assets:
 
 **AC-TVE-011** — Gato no aporta ninguna capa al sprite de Edrick
 **GIVEN** `equipped_demons` contiene solo el Gato, **WHEN** `loadout_changed([Gato], true)` llega y pasan 0.8 s, **THEN** todas las capas son null; `gato_available` es ignorado.
+**Tipo**: Unit | **Bloquea**: Sí
+
+**AC-TVE-041** — Dash `sprite_tint` está presente y activo en reposo (positivo)
+**GIVEN** Dash es el único demonio equipado y el sistema ha finalizado SWAP_ANIM, **WHEN** se consultan los parámetros del shader de `sprite_tint`, **THEN** `sprite_tint` está activo (no null), `color ≈ Color(0.847, 0.894, 0.941)` (hex `#D8E4F0` ±0.01 por canal) y `blend_weight = 0.08 (±0.001)`. Art Direction valida que el tinte es perceptible sobre el sprite base final antes de fijar el valor definitivo en `demons.json`.
+*(Añadido 2026-05-31: AC complementario a TVE-022 — verifica positivamente que el indicador de reposo de Dash existe, en cumplimiento de §3.1.B y Pilar 2.)*
 **Tipo**: Unit | **Bloquea**: Sí
 
 ---
@@ -694,8 +721,9 @@ Antes de producir assets:
 **GIVEN** Visión en slot 1 (incoloro) y Mente en slot 2 (platino), **WHEN** el sistema calcula MULTI_DEMON con N_eye=2, **THEN** ojo izquierdo = incoloro/void, ojo derecho = platino/shine+pulse; los ojos no son idénticos.
 **Tipo**: Unit | **Bloquea**: Sí
 
-**AC-TVE-022** — R7: Dash no aporta aura_bg, sprite_tint ni eye_overlay en ninguna condición
-**GIVEN** Dash es el único demonio equipado, **WHEN** el sistema evalúa todas las capas al finalizar SWAP_ANIM, **THEN** aura_bg=null, sprite_tint=null, eye_overlay=null, floating_fx=null; solo motion_trail tiene parámetros activos.
+**AC-TVE-022** — Dash: capas correctas al finalizar SWAP_ANIM
+**GIVEN** Dash es el único demonio equipado, **WHEN** el sistema evalúa todas las capas al finalizar SWAP_ANIM, **THEN** `aura_bg=null`, `eye_overlay=null`, `floating_fx=null`; `sprite_tint=(color=#D8E4F0, blend_weight=0.08)` activo (no null); `motion_trail` tiene parámetros activos (color gris/blanco, opacity_peak=0.15, trail_length=3, activation_speed=50 px/s).
+*(Corrección 2026-05-31: §3.1.B define que Dash SÍ aporta sprite_tint. AC anterior decía sprite_tint=null — era incorrecto y contradecía §3.1.B.)*
 **Tipo**: Unit | **Bloquea**: Sí
 
 ---
@@ -722,8 +750,9 @@ Antes de producir assets:
 **GIVEN** Edrick sin ningún demonio equipado, **WHEN** se inspeccionan los parámetros del sprite, **THEN** todas las capas son null o cero; el sprite base se renderiza sin modificación de shader.
 **Tipo**: Unit | **Bloquea**: Sí
 
-**AC-TVE-027** — E2: Solo Dash — aspecto base en reposo, estela solo en movimiento
-**GIVEN** Dash es el único demonio, **WHEN** Edrick está en reposo (speed=0), **THEN** sin aura, tinte ni overlay; **WHEN** Edrick se mueve > 50 px/s, **THEN** exactamente 3 ghost frames con F-TVE-03.
+**AC-TVE-027** — E2: Solo Dash — indicador de reposo + estela en movimiento
+**GIVEN** Dash es el único demonio, **WHEN** Edrick está en reposo (speed=0), **THEN** `sprite_tint=(#D8E4F0, blend_weight=0.08)` activo; sin `aura_bg`, `eye_overlay` ni `floating_fx`; sin ghost frames (motion_trail inactivo por speed < activation_speed); **WHEN** Edrick se mueve > 50 px/s, **THEN** sprite_tint sigue activo Y exactamente 3 ghost frames con opacidades F-TVE-03.
+*(Corrección 2026-05-31: "sin aura, tinte ni overlay" era incorrecto — Dash SÍ tiene sprite_tint en reposo per §3.1.B.)*
 **Tipo**: Unit | **Bloquea**: Sí
 
 **AC-TVE-028** — E5: `demon_bound` duplicado para demonio ya en `equipped_demons` es ignorado
@@ -791,8 +820,8 @@ Antes de producir assets:
 
 ---
 
-**Resumen**: 40 ACs — 33 BLOCKING, 1 DEFERRED (TVE-018), 6 ADVISORY.
-**Gate mínimo para hand-off a QA**: AC-TVE-001, AC-TVE-002, AC-TVE-003 (timing/blend-in), AC-TVE-026 (estado IDLE correcto), AC-TVE-006 (null-safety sprite_tint), AC-TVE-011 (Gato null). Nota: AC-TVE-033 (Visual/Advisory) es sign-off de Art Direction — no es un gate de QA hand-off.
+**Resumen**: 41 ACs — 34 BLOCKING, 1 DEFERRED (TVE-018), 6 ADVISORY.
+**Gate mínimo para hand-off a QA**: AC-TVE-001, AC-TVE-002, AC-TVE-003 (timing/blend mecánico), AC-TVE-004 (blend visual progresivo), AC-TVE-026 (estado IDLE correcto), AC-TVE-006 (null-safety sprite_tint), AC-TVE-011 (Gato null), AC-TVE-041 (Dash sprite_tint positivo), AC-TVE-028 (duplicate demon_bound guard), AC-TVE-029 (Tween cancellation). Nota: AC-TVE-033 (Visual/Advisory) es sign-off de Art Direction — no es un gate de QA hand-off.
 
 ---
 
@@ -818,10 +847,14 @@ GDD #3 actualmente usa `aura: string` para el campo `transformacion_visual`. Deb
 *Urgencia: Antes de producción de assets*
 Todos los valores de color, intensidad, orbit_radius y parámetros de capas en la tabla §3.2 son provisionales. Art Direction debe revisar y aprobar todos los valores antes de que pasen a `demons.json`. Ver §8.8 para el checklist completo.
 
-**P-TVE-06 — Señal `edrick_respawned()` no está definida en GDD #2**
-*Urgencia: Antes del primer sprint de implementación*
-entities.yaml confirma que `edrick_respawned()` aún no existe en GDD #2 (Salud y Daño). AC-TVE-031 y AC-TVE-030 dependen de esta señal — son BLOCKING y no pueden verificarse hasta que GDD #2 la añada. Este sistema no puede abrirse como story hasta que GDD #2 esté actualizado.
+**P-TVE-06 — ~~Señal `edrick_respawned()` no está definida en GDD #2~~**
+*~~Urgencia: Antes del primer sprint de implementación~~*
+**CERRADO 2026-05-31 — STALE.** Verificación directa del archivo confirma que `edrick_respawned()` ya existe en GDD #2 (`salud-daño.md`) §6.2. AC-TVE-031 y AC-TVE-030 pueden implementarse. No se requiere enmienda a GDD #2 para esta señal.
 
-**P-TVE-07 — Señal `loadout_swap_started(new_demons)` es nueva y requiere actualización en GDD #10**
+**P-TVE-07 — Señal `loadout_swap_started(new_demons)` requiere enmienda formal de GDD #10**
 *Urgencia: Antes del primer sprint de implementación*
-El modelo de blend progresivo (§3.1.D) requiere que Loadout emita `loadout_swap_started(new_demons: Array[String])` al INICIO de SWAP_ANIM. Esta señal no existe en GDD #10 actualmente. GDD #10 debe añadirla antes de que las stories de este sistema se abran.
+El modelo de blend progresivo (§3.1.D) requiere que Loadout emita `loadout_swap_started(new_demons: Array[String])` al INICIO de SWAP_ANIM. Esta señal no existe en GDD #10 actualmente. Además, GDD #10 Rule 11 y CA-LBM-029a establecen que "la transformación visual aplica al finalizar la animación" — texto que contradice directamente el modelo de este GDD donde el blend visual empieza al inicio. GDD #10 debe enmendarse en coordinación (Productor): (a) añadir la señal a la sección de señales, (b) añadir CA-LBM-029c testeando la nueva señal, (c) corregir Rule 11 para distinguir entre "cambios mecánicos al finalizar" y "blend visual comienza al iniciar". Ver §3.1.D para la especificación completa.
+
+**P-TVE-08 — GDD #13 debe retardar el resume del gameplay por `BINDING_AURA_TRANSITION` segundos**
+*Urgencia: Antes del primer sprint de implementación del binding*
+Decisión de diseño 2026-05-31 (§3.4): el crossfade POST_BINDING ocurre ANTES de que el mundo reanude. Actualmente GDD #13 llama `get_tree().paused = false` inmediatamente después de emitir `demon_bound`. Debe enmendarse para esperar `BINDING_AURA_TRANSITION` segundos (o recibir una notificación de GDD #14) antes de reanudar. Enmienda recomendada para GDD #13: añadir `await get_tree().create_timer(BINDING_AURA_TRANSITION).timeout` después de emitir `demon_bound`. Si `BINDING_AURA_TRANSITION` cambia por tuning, GDD #13 debe leer el mismo valor de configuración.

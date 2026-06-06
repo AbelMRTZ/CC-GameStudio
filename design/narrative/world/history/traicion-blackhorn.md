@@ -39,3 +39,7 @@ Antes de que su propio destino se sellara, **Sir Aldric de Mireval** —un veter
 Draeven Blackhorn ejecutó su plan casi a la perfección. Se proclamó rey de las Tierras del Norte y consolidó su dominio tras obtener los demonios de Dorian Velmar, Galen Blackhorn y un alto cargo militar del reino de los Velmar. Kaelen, por su parte, reclamó otro demonio perteneciente a un oficial de alto rango.
 
 Sin embargo, la huida de Edrick dejó una grieta en el resultado perfecto. Desde aquel día, Draeven Blackhorn no ha cesado en su búsqueda por todo el continente. Y para Edrick, aquel instante marcó el inicio de una única certeza: el mundo que conocía había terminado para siempre.
+
+## Aclaraciones
+
+Cabe mencionar que aunque trascurran en años similares, la [Guerra Civil Luxiana](../world/history/guerra-civil-luxiana.md) no tiene nada que ver con este evento.

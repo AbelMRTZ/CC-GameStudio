@@ -1,6 +1,6 @@
 # GDD: Sistema de NPC y Diálogo
 
-> **Status**: En Revisión
+> **Status**: Aprobado
 > **Autor**: Abel + agentes
 > **Última Actualización**: 2026-05-27
 > **Sistema**: NPC y Diálogo (#15)

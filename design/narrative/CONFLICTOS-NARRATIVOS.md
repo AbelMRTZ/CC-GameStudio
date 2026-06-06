@@ -10,7 +10,7 @@ Corresponden a elecciones creativas que solo el autor del juego puede tomar. No 
 
 ---
 
-### D-01 — Personalidad y voz de Edrick
+### D-01 — Personalidad y voz de Edrick (Solucionado)
 
 Edrick toma la palabra en al menos cinco momentos narrativos del Acto 1. Sin una definición de su carácter no se puede escribir ninguna línea de diálogo.
 
@@ -18,7 +18,7 @@ Edrick toma la palabra en al menos cinco momentos narrativos del Acto 1. Sin una
 
 ---
 
-### D-02 — Qué sabe Edrick al inicio del Acto 1
+### D-02 — Qué sabe Edrick al inicio del Acto 1 (Solucionado)
 
 Sir Aldric convivió con Edrick durante 12 años. La cantidad de información que le transmitió determina el punto de partida emocional del protagonista y el peso de cada revelación del acto.
 
@@ -26,7 +26,7 @@ Sir Aldric convivió con Edrick durante 12 años. La cantidad de información qu
 
 ---
 
-### D-03 — El cadáver del monasterio: ¿cómo sabe El Gato que está ahí?
+### D-03 — El cadáver del monasterio: ¿cómo sabe El Gato que está ahí? (Solucionado)
 
 En la Misión 1.2.3, El Gato lleva a Edrick hasta el monasterio y excava un cadáver que porta una carta dirigida a Sir Aldric. El Gato es Dorian, muerto hace 12 años — presumiblemente antes de que esa carta existiera.
 
@@ -34,7 +34,7 @@ En la Misión 1.2.3, El Gato lleva a Edrick hasta el monasterio y excava un cad�
 
 ---
 
-### D-04 — Las "historias antiguas" que Tristan conoce sobre El Gato
+### D-04 — Las "historias antiguas" que Tristan conoce sobre El Gato (Solucionado)
 
 La Misión 1.4.1 usa el conocimiento de Tristan sobre El Gato como primer momento de revelación de su verdadera naturaleza. Pero El Gato es Dorian Velmar, muerto hace solo 12 años. Las historias "antiguas" no encajan con esa fecha.
 
@@ -42,23 +42,15 @@ La Misión 1.4.1 usa el conocimiento de Tristan sobre El Gato como primer moment
 
 ---
 
-### D-05 — El demonio de la Casa Velmar
-
-El prólogo establece que los Blackhorn vinieron a "arrebatar el demonio que ha dado nombre a la Casa Velmar durante siglos." Dorian lo tenía; Draeven lo heredó al matarlo. Pero Edrick, el heredero superviviente, no tiene demonio.
-
-**Qué decidir:** ¿Es el demonio de Dorian el demonio de la Casa, o existe un demonio familiar distinto que Edrick debería reclamar como parte de su venganza? Esto afecta a la motivación central del protagonista y al arco de los actos siguientes.
-
----
-
-### D-06 — Consecuencias de la elección final (Misión 1.4.4)
+### D-05 — Consecuencias de la elección final (Misión 1.4.4) (Solucionado — 2026-05-31)
 
 La elección de bando está definida mecánicamente (qué demonio obtiene Edrick) pero no narrativamente (qué pasa después).
 
-**Qué decidir:** ¿El hermano derrotado muere o sobrevive? ¿Tiene presencia en actos futuros? ¿La elección cambia el estado político del mundo al llegar al Acto 2, o solo determina qué demonio lleva Edrick? Necesita resolverse antes de diseñar el inicio del Acto 2.
+**Decisión tomada:** El hermano derrotado muere. La muerte del portador es condición necesaria para el binding demoníaco (GDD #13) — el hermano al que Edrick traiciona perece en el clímax y su demonio se vincula a Edrick. El hermano aliado sobrevive y hereda el control político de Luxterra. La elección cambia qué demonio lleva Edrick (Espada o Destello según el hermano derrotado) y qué facción controla Luxterra al inicio del Acto 2. Resuelta durante sesión de diseño de GDD #16 (Progresión Narrativa).
 
 ---
 
-### D-07 — La línea temporal: ¿conexión entre la Traición y la Guerra Civil?
+### D-06 — La línea temporal: ¿conexión entre la Traición y la Guerra Civil? (Solucionado)
 
 La Traición de los Blackhorn ocurrió hace 12 años (12 a.H.) y la Guerra Civil Luxiana hace 13 años (13 a.H.). Un año de diferencia. Puede ser coincidencia o puede haber una conexión causal no documentada.
 
@@ -66,19 +58,13 @@ La Traición de los Blackhorn ocurrió hace 12 años (12 a.H.) y la Guerra Civil
 
 ---
 
-### D-08 — Elian no reconoce a Edrick en Misión 1.2.2
-
-Elian lleva años buscando al heredero Velmar. En la Misión 1.2.2 le pregunta directamente a Edrick si conoce a "Edrick Velmar" sin reconocerlo. Edrick tenía 8 años en la Traición y ahora tiene 20 — eso es suficiente justificación, pero necesita estar explícitamente documentado.
-
-**Qué decidir:** ¿Elian tiene algún retrato o descripción de Edrick niño? ¿Le llegaron noticias de cómo es de mayor? ¿Ha descartado que siga vivo? Hay que establecer qué sabe Elian exactamente para que la escena sea coherente.
-
----
-
-### D-09 — El prólogo: ¿jugable o cinemático?
+### D-08 — El prólogo: ¿jugable o cinemático? (Solucionado — 2026-06-04)
 
 El prólogo está documentado en dos párrafos sin misiones, objetivos ni mecánicas. El Acto 1 completo tiene misiones, puentes y gameplay detallado.
 
 **Qué decidir:** ¿El prólogo es una cinemática de introducción o tiene segmentos jugables? Si es jugable, necesita el mismo nivel de detalle que el Acto 1. Si es cinemático, hay que definir su duración y qué decisiones narrativas comunica al jugador antes de que empiece el juego.
+
+**Decisión tomada:** El prólogo es una cinemática de introducción no jugable. Comunica al jugador, antes de que empiece el gameplay: (1) la vida y el hogar original de Edrick en el castillo de la Casa Velmar; (2) el ataque traidor de Draeven Blackhorn y la masacre de la familia; (3) la huida de un Edrick de 8 años en brazos de Sir Aldric; (4) el trauma que marcará toda la personalidad del protagonista. Al terminar la cinemática, el juego salta 12 años al presente del Acto 1. El scope de GDD #17 (Cinemáticas) debe incluir la implementación de esta secuencia.
 
 ---
 

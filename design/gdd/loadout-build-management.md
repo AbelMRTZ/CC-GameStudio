@@ -58,7 +58,7 @@ Al finalizar la animación de intercambio:
 13. Los modificadores de stats del demonio anterior se eliminan; los del nuevo se aplican inmediatamente.
 14. El Motor de Sinergias recibe notificación vía la señal `loadout_changed(equipped_demons, gato_available)` del EventBus (ver Regla 16) y recalcula todas las sinergias activas.
 15. La Transformación Visual actualiza sprite y aura de Edrick según el nuevo demonio activo.
-16. El EventBus emite `loadout_changed(equipped_demons: Array[String], gato_available: bool)` para que HUD, Motor de Sinergias y otros sistemas actualicen su estado. `gato_available` refleja el valor cacheado en `_gato_available` de Loadout en el momento de la emisión. **Esta es la misma señal del paso 14 — no son dos notificaciones separadas. Motor de Sinergias se suscribe al EventBus.**
+16. El EventBus emite `loadout_changed(equipped_demons: Array[String], gato_available: bool, slot_cooldowns: Array[float], hp_max: int)` para que HUD, Motor de Sinergias y otros sistemas actualicen su estado. `gato_available` refleja el valor cacheado en `_gato_available`. `slot_cooldowns[i]` = `cooldown_segundos` del demonio equipado en slot i (0.0 si el slot está vacío). `hp_max` = HP máximo calculado tras aplicar todos los hp_bonus. **Esta es la misma señal del paso 14 — no son dos notificaciones separadas. Motor de Sinergias se suscribe al EventBus.**
 
 **E. Acceso a la Build Screen**
 
@@ -73,7 +73,9 @@ Al finalizar la animación de intercambio:
 **F. Monitoreo de Estado del Gato**
 
 22. Loadout expone el método público `notify_gato_available(is_available: bool)`. Estado del Mundo (#4) lo invoca directamente cuando el estado narrativo del Gato cambia (Gato desaparece o regresa). Este patrón es consistente con el método directo que usa Vinculación (#13) para `add_available_demon()`.
-23. Al recibir `notify_gato_available(is_available)`, Loadout actualiza su propiedad cacheada `gato_available` y re-emite `loadout_changed(equipped_demons, gato_available)` inmediatamente — aunque no haya habido swap de demonio. El Motor de Sinergias recibe la notificación y desactiva o reactiva las sinergias que requieren al Gato.
+23. Al recibir `notify_gato_available(is_available)`, Loadout actualiza su propiedad cacheada `gato_available` y re-emite `loadout_changed(equipped_demons, gato_available, slot_cooldowns, hp_max)` inmediatamente — aunque no haya habido swap de demonio. El Motor de Sinergias recibe la notificación y desactiva o reactiva las sinergias que requieren al Gato.
+
+24. Durante el estado COMBAT, cuando `is_swap_on_cooldown = true`, el Loadout emite `swap_cooldown_updated(remaining: float)` en cada tick de `_process()` mientras `swap_cooldown_remaining > 0`. Al expirar el cooldown, emite `swap_cooldown_updated(0.0)` una vez. El HUD de Combate usa esta señal para renderizar F-HUD-04 sin acceso directo al nodo Loadout (ADR-002).
 
 ### 3.2 Estados y Transiciones
 
@@ -213,7 +215,7 @@ tiempo_hasta_proximo_swap = SWAP_ANIM_DURATION + SWAP_COMBAT_COOLDOWN = 0.8 + 5.
 | **Motor de Sinergias (#11)** | Recibe señal `loadout_changed(equipped_demons: Array[String], gato_available: bool)` para recalcular sinergias activas. `gato_available` determina si las sinergias narrativas del Gato están habilitadas. La señal se emite en dos casos: (a) al finalizar SWAP_ANIM, y (b) al recibir `notify_gato_available` sin swap. |
 | **Combate en Tiempo Real (#6)** | Lee `equipped_demons` para mapear las habilidades activas de cada demonio a los inputs del jugador. |
 | **Transformación Visual (#14)** | Recibe notificación con el `demon_id` activo al completar un swap para actualizar sprite y aura de Edrick. |
-| **HUD de Combate (#18)** | Lee `equipped_demons`, `slot_count`, `is_swap_on_cooldown`, `swap_cooldown_remaining` para renderizar el estado del loadout en pantalla. |
+| **HUD de Combate (#18)** | Recibe `loadout_changed(equipped_demons, gato_available, slot_cooldowns, hp_max)` para íconos, slot_count, cooldown_max por slot y HP_MAX. Recibe `swap_cooldown_updated(remaining: float)` para el indicador de swap (Regla 3 GDD #18). Todo via EventBus — sin acceso directo a propiedades del nodo Loadout. |
 | **Build Management UI (#20)** | Es la capa de interacción del jugador. Emite operaciones (equipar/intercambiar/limpiar) al sistema y lee el estado del loadout para renderizarlo. **Requisito duro hacia GDD #20**: La UI DEBE especificar un affordance de pre-confirmación para swaps en combate — un estado visual (tooltip, cambio de label, highlight) que informe al jugador que confirmar iniciará 0.8s de vulnerabilidad antes de que puedan cancelar. Sin este affordance, la transición irrevocable al SWAP_ANIM es invisible para el jugador. |
 | **Vinculación de Demonios (#13)** | Al vincular un nuevo demonio, notifica a este sistema para que actualice `available_demons` (el demonio pasa de no disponible a disponible). |
 | **Restricción por Demonio (#23)** | Lee `equipped_demons` para verificar si el jugador tiene los demonios requeridos para acceder a ciertas áreas o momentos narrativos. |

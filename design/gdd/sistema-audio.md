@@ -34,9 +34,11 @@ El audio del juego entrega **cuatro fantasías centrales al jugador**:
 
 ## 3. Reglas Detalladas
 
-### 3.1 Las Cuatro Capas de Audio
+### 3.1 Las Cinco Capas de Audio
 
-Toda producción de audio se organiza en **cuatro capas independientes** que se mezclan dinámicamente. Cada capa tiene su propio bus, controles de volumen, y reglas de activación.
+Toda producción de audio se organiza en **cinco capas independientes** que se mezclan dinámicamente. Cada capa tiene su propio bus, controles de volumen, y reglas de activación.
+
+> **Nota de actualización (2026-06-05 — post /design-review GDD #18):** Se añadió la Capa 5 (SFX HUD) para las señales de audio del HUD de Combate. Los buses "Música", "SFX_Combate", "SFX_Ambiental" y "Diálogos" no cambian.
 
 - **Capa 1: Música** (orquesta, síntetizers, temas narrativos)
   - Música ambiental por reino (loop continuo durante exploración)
@@ -61,6 +63,13 @@ Toda producción de audio se organiza en **cuatro capas independientes** que se 
   - Voz interna de Edrick: sutileza en monólogos (pensamiento, duda, corrupción)
   - Vocalizaciones del Gato: bufidos, aullidos, ronroneos — no VO, pero comunicación clara
   - Radio de activación: solo NPCs en rango visual moderado
+
+- **Capa 5: SFX HUD** (señales de estado del HUD de Combate)
+  - Nivel: −14 dBFS respecto al bus `SFX_Combate` (= 20% del headroom de audio; nunca audible sobre SFX de combate a volumen máximo)
+  - Cues: HP entrando en Alerta (heartbeat 80–120 Hz, 0.3s), HP entrando en Crítico (heartbeat + tono 1.5kHz, 0.1s), restauración Santuario (campana medieval, 0.4s), slot listo (click cadena, 0.05s), slot flash error (buzz 0.08s), swap cooldown expira (chain-rattle 0.15s), guardado (rustle pergamino, 0.2s)
+  - Regla global: ningún sonido de este bus es audible sobre SFX de combate a volumen máximo
+  - Audio cues de HP Alerta/Crítico: disparo único por cruce de umbral, primera vez por encuentro (1 ciclo `combat_started`/`combat_ended`); el flag se resetea al cruzar de vuelta por encima del umbral
+  - Sin loops en este bus; todos los cues son transientes
 
 ### 3.2 Máquina de Estados de Audio y Eventos
 
@@ -703,7 +712,7 @@ Cada reino tiene su propia **"firma sonora"** — música, SFX ambientales, reve
 
 ### 8.1 Reproducción Básica de Audio
 
-**CA-001**: Sistema de audio carga en startup. PASS: `AudioServer.get_bus_count() == 4`, los 4 buses existen con nombres "Música", "SFX_Combate", "SFX_Ambiental", "Diálogos", y 0 entradas de nivel ERROR en el log de Godot que contengan "AudioServer" dentro de los primeros 2 segundos de startup. Verificable con test GUT que inicializa AudioManager y llama `assert(AudioServer.get_bus_count() == 4)`.
+**CA-001**: Sistema de audio carga en startup. PASS: `AudioServer.get_bus_count() == 5`, los 5 buses existen con nombres "Música", "SFX_Combate", "SFX_Ambiental", "Diálogos", "SFX_HUD", y 0 entradas de nivel ERROR en el log de Godot que contengan "AudioServer" dentro de los primeros 2 segundos de startup. Verificable con test GUT que inicializa AudioManager y llama `assert(AudioServer.get_bus_count() == 5)`. *(Actualizado 2026-06-05: añadido bus SFX_HUD para GDD #18 HUD de Combate.)*
 
 **CA-002**: Música ambiental de región comienza a loopear cuando Edrick entra en exploración. Verifica: loop sin chasquidos, duración correcta, volumen en base_level_dB.
 

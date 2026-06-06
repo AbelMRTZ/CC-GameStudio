@@ -35,7 +35,7 @@ Cuando termina, Elian se va acompañado de su compañía y la plaza se vacía pa
 
 El jugador puede explorar libremente Aurenfall e interactuar con los NPCs. En este punto Edrick tiene dos objetivos: volver a encontrar a El Gato y descubrir qué trama Elian Lyndor y por qué lo busca. Las conversaciones con los NPCs deben ofrecer pequeñas pinceladas de la historia del reino y sus personajes, y conducir al jugador a un monasterio abandonado a las afueras de la ciudad.
 
-Allí, tras interactuar con ciertos NPCs, Edrick encuentra a El Gato excavando detrás del monasterio. Juntos desenterran un cadáver; en su bolsillo hay una carta dirigida a Sir Aldric:
+Allí, tras interactuar con ciertos NPCs, Edrick encuentra a El Gato excavando detrás del monasterio -El gato es un demonio sobrenatural que sabe muchas cosas que Edrick no-. Juntos desenterran un cadáver; en su bolsillo hay una carta dirigida a Sir Aldric:
 
 > *"Los Blackhorn están buscando a Edrick, debéis huir de Luxterra, ya no es un lugar seguro. Una guerra se avecina sobre la tierra de la luz. Recordar que la casa Velmar sigue teniendo amigos allá donde el agua moje y el fuego queme. Hasta que el Sol deje de salir."*
 
@@ -79,7 +79,7 @@ Al salir de la fortaleza, un desconocido entrega a Edrick una carta: una invitac
 
 Si Edrick acude a la reunión, Tristan le presenta su versión de los hechos: sabe que Elian conoce su vuelta y sabe también que el pueblo lo apoya. Por eso, según Tristan, Elian ha decidido permitir que los Blackhorn operen en Luxterra —buscando a Edrick— a cambio de apoyo militar frente a una posible invasión. Esto significa entregar Luxterra a manos extranjeras, algo intolerable para un reino con tan fuerte sentimiento de independencia.
 
-Tristan se presenta como defensor de los valores del pueblo y acusa a su hermano de estar desesperado por conservar el poder, hasta el punto de traicionar lo que Luxterra representa. También advierte a Edrick: Elian solo lo quiere por El Gato, y cuando termine el conflicto planea arrebatárselo. Tristan conoce historias antiguas sobre El Gato, a través de las cuales se revela por primera vez algo sobre la verdadera naturaleza del compañero de Edrick.
+Tristan se presenta como defensor de los valores del pueblo y acusa a su hermano de estar desesperado por conservar el poder, hasta el punto de traicionar lo que Luxterra representa. También advierte a Edrick: Elian solo lo quiere por El Gato, y cuando termine el conflicto planea arrebatárselo. Tristan conoce historias recientes sobre El Gato, cosas que se creen y que se cuentan, a través de las cuales se revela por primera vez algo sobre la verdadera naturaleza del compañero de Edrick.
 
 Las versiones de ambos hermanos chocan y son igualmente convincentes. Al salir de la reunión, Edrick se enfrenta a un verdadero dilema sobre a quién apoyar.
 

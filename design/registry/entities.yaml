@@ -199,6 +199,69 @@ formulas:
     added: "2026-05-28"
     revised: ""
 
+  - name: gate_condition_eval
+    status: active
+    source: design/gdd/progresion-narrativa.md
+    referenced_by:
+      - design/gdd/progresion-narrativa.md
+    expression: "GATE_READY(gate) = ∀ c ∈ gate.preconditions: world_state.major_events.get(c.key, 0) >= c.fase_min"
+    variables:
+      - gate.preconditions   # Array[Precondition] — lista AND-ed; lista vacía = vacuamente true
+      - c.key                # String — key en major_events a verificar
+      - c.fase_min           # int [1, N] — fase mínima requerida
+    output_range: [false, true]
+    notes: "F1 de GDD #16. Key ausente en major_events → get(key, 0) = 0 → always false (seguro). Lista vacía → vacuamente true (correcto para primeros eventos). Implementar con short-circuit en primer false."
+    added: "2026-05-31"
+    revised: ""
+
+  - name: fired_gate_reconstruction
+    status: active
+    source: design/gdd/progresion-narrativa.md
+    referenced_by:
+      - design/gdd/progresion-narrativa.md
+      - design/gdd/guardado-y-carga.md
+    expression: "ALREADY_FIRED(gate) = ∀ e ∈ gate.consequences WHERE e.type=='major_event': world_state.major_events.get(e.key, 0) >= e.target_fase"
+    variables:
+      - gate.consequences    # Array[Consequence] — solo se filtran las de type=='major_event'
+      - e.key                # String — key que la consecuencia habría escrito
+      - e.target_fase        # int — la fase que la consecuencia habría asignado
+    output_range: [false, true]
+    notes: "F2 de GDD #16. Usada al cargar para reconstruir fired_gates en memoria sin persistirlo. Invariante crítico: todas las escrituras a major_events son absolutas (= target_fase), nunca += 1 — garantiza idempotencia en re-disparo. Gate sin consecuencias major_event DEBE tener sentinel { key: 'gate_[id]_fired', target_fase: 1 }."
+    added: "2026-05-31"
+    revised: ""
+
+  - name: act_progress_pct
+    status: active
+    source: design/gdd/progresion-narrativa.md
+    referenced_by:
+      - design/gdd/progresion-narrativa.md
+    expression: "clamp((P_main/P_main_total)×W_main + min(P_optional/P_optional_total, 1.0)×W_optional, 0.0, 1.0) × 100"
+    variables:
+      - P_main               # int [0, P_main_total] — gates principales en fase completion
+      - P_main_total         # int; MVP Acto 1 = 13
+      - W_main               # float; recomendado 0.90; W_main+W_optional=1.0
+      - P_optional           # int [0, P_optional_total] — valor de investigacion_1_4 (0–3)
+      - P_optional_total     # int; MVP Acto 1 = 3
+      - W_optional           # float = 1.0 - W_main; recomendado 0.10
+    output_range: [0.0, 100.0]
+    notes: "F3 de GDD #16. Contenido opcional suma máximo W_optional×100 puntos adicionales. 100% = arco principal completo + todo el opcional. Consumida por GDD #19 (Bestiario) para desbloqueos por progreso de acto."
+    added: "2026-05-31"
+    revised: ""
+
+  - name: narrative_variant
+    status: active
+    source: design/gdd/progresion-narrativa.md
+    referenced_by:
+      - design/gdd/progresion-narrativa.md
+      - design/gdd/sistema-npc-dialogo.md
+    expression: "NARRATIVE_VARIANT(investigacion_1_4) = VARIANT_TABLE[clamp(investigacion_1_4, 0, 3)]"
+    variables:
+      - investigacion_1_4    # int [0, 3] — major_event de misiones secundarias Arco 1.4.2
+    output_range: ['"ninguna"', '"parcial"', '"avanzada"', '"completa"']
+    notes: "F4 de GDD #16. String enum compartido entre GDD #15 (NPC y Diálogo) y GDD #17 (Cinemáticas) — los strings son pointers a branches del árbol de diálogos. No modificar sin actualizar ambos GDDs. Variant 'completa' desbloquea bestiary_unlock('investigacion_aldric_completa'). VARIANT_TABLE vive en /assets/data/narrative/acto_1.yaml."
+    added: "2026-05-31"
+    revised: ""
+
   - name: knockback_decay_formula
     status: active
     source: design/gdd/combate-tiempo-real.md
@@ -449,11 +512,12 @@ constants:
     source: design/gdd/loadout-build-management.md
     referenced_by:
       - design/gdd/loadout-build-management.md
+      - design/gdd/hud-combate.md
     value: 5.0
     unit: seconds
-    notes: "Cooldown entre swaps de demonio en combate. Empieza al finalizar SWAP_ANIM_DURATION. Solo activo en estado COMBAT. Tiempo efectivo entre swaps: 5.8s (0.8+5.0)."
+    notes: "Cooldown entre swaps de demonio en combate. Empieza al finalizar SWAP_ANIM_DURATION. Solo activo en estado COMBAT. Tiempo efectivo entre swaps: 5.8s (0.8+5.0). GDD #18 usa este valor en F-HUD-04 (swap_overlay_ratio)."
     added: "2026-05-28"
-    revised: ""
+    revised: "2026-06-04"
 
   - name: SLOTS_BASE
     status: active
@@ -658,11 +722,12 @@ constants:
     source: design/gdd/guardado-y-carga.md
     referenced_by:
       - design/gdd/guardado-y-carga.md
+      - design/gdd/hud-combate.md
     value: 1.5
     unit: seconds
     notes: "Tiempo que el ícono de guardado permanece visible en pantalla. Rango seguro: 0.8–3.0s. HUD (GDD #18) escucha show_save_indicator y usa esta constante para el timer del ícono."
     added: "2026-05-28"
-    revised: ""
+    revised: "2026-06-04"
 
   - name: corruption_floor_per_dark_act
     status: active
@@ -719,9 +784,9 @@ constants:
 
 # health_changed(nuevo_hp: int, daño_recibido: int, tipo_daño: String)
 #   source: design/gdd/salud-daño.md
-#   referenced_by: HUD de Combate (GDD pendiente)
+#   referenced_by: design/gdd/hud-combate.md (GDD #18 — HUD escucha para actualizar HP bar)
 #   added: 2026-05-26
-#   revised: 2026-05-29
+#   revised: 2026-06-04
 #   tipo_daño values: "physical", "fire", "ice", "arcane", "corruption", "restauracion"
 #   nota: cuando tipo_daño == "restauracion" (Santuario), daño_recibido es negativo (HP ganado).
 #         Si HP ya era máximo, la señal NO se emite (AC-S4).
@@ -783,8 +848,9 @@ constants:
 
 # show_save_indicator()
 #   source: design/gdd/guardado-y-carga.md (SaveLoadSystem)
-#   referenced_by: design/gdd/guardado-y-carga.md (HUD GDD #18 escuchará esta señal)
+#   referenced_by: design/gdd/guardado-y-carga.md, design/gdd/hud-combate.md (GDD #18 escucha y muestra ícono por SAVE_INDICATOR_DURATION = 1.5s)
 #   added: 2026-05-28
+#   revised: 2026-06-04
 #   notes: No se emite en area-exit ni en guardados parciales de evento crítico.
 
 # interaccion_completada()
@@ -794,8 +860,9 @@ constants:
 
 # loadout_changed(equipped_demons: Array[String], gato_available: bool)
 #   source: design/gdd/loadout-build-management.md (Loadout emite al finalizar SWAP_ANIM_DURATION o cuando gato_available cambia)
-#   referenced_by: design/gdd/motor-sinergias.md (único trigger de reevaluación del Motor), design/gdd/transformacion-visual-edrick.md (trigger de actualización de capas)
+#   referenced_by: design/gdd/motor-sinergias.md (único trigger de reevaluación del Motor), design/gdd/transformacion-visual-edrick.md (trigger de actualización de capas), design/gdd/hud-combate.md (GDD #18 actualiza íconos de slots y slot_count)
 #   added: 2026-05-28
+#   revised: 2026-06-04
 #   notes: gato_available: bool añadido durante diseño de GDD #11. GDD #10 §3.3 pendiente actualizar para reflejar nuevo payload. Loadout re-emite con mismo equipped_demons si solo cambia gato_available.
 
 # synergies_updated(active_synergies: Array[String])
@@ -818,11 +885,11 @@ constants:
 #   notes: Emitida al entrar en SEQUENCE_STANDARD. No emitida para secuencias custom (la escena custom gestiona su propio audio). Emitida exactamente una vez por binding.
 
 # demon_bound(demon_id: String)
-#   source: design/gdd/vinculacion-demonios.md (emitida tras Registro para todos los demonios)
-#   additional_emitter: design/gdd/progresion-narrativa.md (GDD #16 — emite demon_bound("cat") directamente para el Gato)
-#   referenced_by: design/gdd/loadout-build-management.md, design/gdd/motor-sinergias.md, design/gdd/transformacion-visual-edrick.md (dispara POST_BINDING crossfade)
+#   source: design/gdd/vinculacion-demonios.md (emitida tras Registro para todos los demonios, incluyendo "cat")
+#   referenced_by: design/gdd/loadout-build-management.md, design/gdd/motor-sinergias.md, design/gdd/transformacion-visual-edrick.md (dispara POST_BINDING crossfade), design/gdd/progresion-narrativa.md (activa gates de tipo binding_complete)
 #   added: 2026-05-29
-#   notes: Señal downstream primaria de este sistema. Siempre emitida DESPUÉS de escribir en world_state.available_demons (AC-VD-023). GDD #16 es co-emisor solo para "cat".
+#   revised: 2026-05-31
+#   notes: Señal downstream primaria. Siempre emitida DESPUÉS de escribir en world_state.available_demons (AC-VD-023). Para el Gato: GDD #16 emite cat_encounter_complete() → Vinculación escucha y ejecuta Registro → Vinculación emite demon_bound("cat"). GDD #16 NO emite demon_bound directamente en ningún caso.
 
 # binding_sequence_complete()
 #   source: design/gdd/vinculacion-demonios.md (contrato que cada escena custom debe implementar)
@@ -830,3 +897,35 @@ constants:
 #   referenced_by: design/gdd/vinculacion-demonios.md (sistema espera esta señal en SEQUENCE_CUSTOM)
 #   added: 2026-05-29
 #   notes: Señal sin payload. La escena custom es responsable de emitirla al terminar. Sin esta señal el sistema queda en SEQUENCE_CUSTOM — ver P-VD-01.
+
+# cat_encounter_complete()
+#   source: design/gdd/progresion-narrativa.md (GDD #16 — emitida cuando el gate de "gato unido" dispara en el Arco 1.1)
+#   referenced_by: design/gdd/vinculacion-demonios.md (escucha y ejecuta Registro para "cat" sin secuencia visual)
+#   added: 2026-05-31
+#   notes: Señal sin payload. GDD #16 emite exactamente una vez al completar el gate de encuentro del Gato (combat_sequence "batalla_hijos_fin_arco_1_1" + encuentro_gato≥1). GDD #13 escucha y emite demon_bound("cat"). Sin audio de binding (silencio intencional — §3.1.G de GDD #13).
+
+# combat_sequence_complete(sequence_id: String)
+#   source: design/gdd/progresion-narrativa.md (GDD #16 — requiere esta señal en el EventBus para gates de tipo combat_sequence)
+#   emitters: design/gdd/combate-tiempo-real.md (GDD #6 debe añadir emisión de esta señal para secuencias con ID narrativo predefinido)
+#   referenced_by: design/gdd/progresion-narrativa.md
+#   added: 2026-05-31
+#   notes: Nueva señal — PENDIENTE añadir a ADR-002 (EventBus) y a GDD #6 (Combate). Las secuencias narrativas tienen IDs definidos en /assets/data/narrative/acto_[N].yaml. Combate emite esta señal cuando una secuencia de combate marcada como narrativa completa. MVP Acto 1: "batalla_hijos_fin_arco_1_1", "fortaleza_alba_conquistada", "emboscada_tristan", "climax_acto_1_post_eleccion".
+
+# narrative_gate_open(gate_id: String)
+#   source: design/gdd/progresion-narrativa.md (GDD #16 — emitida cuando cualquier gate narrativo dispara)
+#   referenced_by: design/gdd/sistema-audio.md (crossfade de música en momentos narrativos clave)
+#   added: 2026-05-31
+#   notes: Señal genérica de notificación post-gate. Audio (#5) puede suscribirse para transiciones musicales en gates importantes (arco completo, acto completo). No contiene payload de consecuencias — solo el ID del gate disparado.
+
+# sanctuary_in_range(is_in_range: bool)
+#   source: PROVISIONAL — propietario no definido. Candidatos: nodo Santuario (desde GDD #8 Exploración) o Level Designer
+#   referenced_by: design/gdd/hud-combate.md (GDD #18 — Regla 5, Indicador de Santuario)
+#   added: 2026-06-04
+#   notes: PENDIENTE registro formal hasta que GDD #8 defina el propietario de la señal. No añadir a EventBus (ADR-002)
+#          hasta resolver la propiedad. GDD #18 Open Question #1.
+
+# bestiary_unlock(demon_id: String)
+#   source: design/gdd/progresion-narrativa.md (GDD #16 — emitida como consecuencia de ciertos gates narrativos)
+#   referenced_by: design/gdd/bestiario (GDD #19 — pendiente diseño)
+#   added: 2026-05-31
+#   notes: Desbloquea entradas específicas del Bestiario. En MVP Acto 1: gate investigacion_1_4=3 emite bestiary_unlock("investigacion_aldric_completa"). Bestiario (#19) escucha y revela la entrada.

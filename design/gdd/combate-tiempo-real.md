@@ -116,7 +116,7 @@ Reglas adicionales:
 | Base de Datos de Demonios | Entrada | Combate lee `cooldown`, `damage_modifier`, `ability_type`, `knockback_magnitude` por demonio |
 | Estado del Mundo | Salida | Combate emite señal `corruption_passive_tick(amount_per_minute)` cada 60s en combate activo (suma de tiers de demonios equipados desde GDD #3 §4.3); Estado del Mundo escucha y aplica a `corruption_level` con `corruption_floor` mínimo |
 | IA de Enemigos (downstream) | Entrada | IA lee el estado de combate del jugador para tomar decisiones (p.ej. atacar durante recovery) |
-| HUD de Combate (downstream) | Salida | Combate emite señales `cooldown_changed(slot, value)`, `hit_stun_started`, `i_frames_active` |
+| HUD de Combate (downstream) | Salida | Combate emite señales `cooldown_changed(slot, value)`, `hit_stun_started`, `i_frames_active`, `combat_started` (al entrar en estado COMBAT), `combat_ended` (al salir de COMBAT) vía EventBus |
 
 ## Formulas
 
@@ -266,7 +266,7 @@ Si un enemigo tiene -0.7 resistencia a Fuego pero la fórmula sólo permite cap 
 | **Cámara** (GDD #9) | Señales de transición de modo: `combat_started` y `combat_ended`. La cámara recibe estas señales vía EventBus para interpolar entre submodos FOLLOW_EXPLORE ↔ FOLLOW_COMBAT |
 | **IA de Enemigos** (GDD #7) | Estado actual del jugador (IDLE/LIGHT_ATTACK/HIT_STUN/etc) · cooldowns visibles · para tomar decisiones de ataque |
 | **Vinculación de Demonios** (GDD #13) | Eventos cuando demonios se equipan/desactivan · modificadores dinámicos |
-| **HUD de Combate** (GDD #18) | Señales de cooldown (`cooldown_changed(slot, value)`) · HP actual · estado de I-frames |
+| **HUD de Combate** (GDD #18) | `cooldown_changed(slot, value)` para sweeps de cooldown · `combat_started` / `combat_ended` para indicador de combate (Regla 3 GDD #18) |
 
 ## Tuning Knobs
 

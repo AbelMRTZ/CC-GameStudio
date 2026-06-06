@@ -39,7 +39,7 @@ habilidades_activas: []
   - nombre: string
     descripcion: string
     mecanica: string
-    cooldown_segundos: float
+    cooldown_segundos: float  # ≥ 0.1s para habilidades activas; null = habilidad pasiva/instantánea sin cooldown. Floor 0.1s garantiza que el sweep del HUD (F-HUD-03) nunca quede permanentemente lleno.
 
 habilidades_pasivas: []
   - nombre: string

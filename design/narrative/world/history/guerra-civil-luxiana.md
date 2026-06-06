@@ -45,3 +45,7 @@ En un acto de piedad —o de debilidad, según quién lo relate— ordenó el **
 Han transcurrido trece años desde el final de la guerra. Durante mucho tiempo, nadie volvió a tener noticias de Tristan. Sin embargo, en los últimos años han comenzado a circular rumores inquietantes: se dice que ha reunido un nuevo ejército y que planea regresar para reclamar lo que considera suyo por derecho.
 
 Los más cercanos al rey afirman que no pasa un solo día sin que **Elian Lyndor se atormente pensando si perdonar la vida a su hermano fue el mayor error de su reinado**, uno capaz de condenar a Luxterra a una nueva guerra civil.
+
+## Aclaraciones
+
+Cabe mencionar que aunque trascurran en años similares, la [Traicion de los Blackhorn](../world/history/traicion-blackhorn.md) no tiene nada que ver con este evento.
