@@ -1,0 +1,301 @@
+{
+  "main": {
+    "id": "b960befea0c7061e",
+    "type": "split",
+    "children": [
+      {
+        "id": "fecaa636e4e8831e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d727eb0336e825aa",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "world/history/lore-demonios.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "lore-demonios"
+            }
+          },
+          {
+            "id": "1ecf765539aba297",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "demons/Azhar \"La Última Llama\".md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Azhar \"La Última Llama\""
+            }
+          },
+          {
+            "id": "a580a70ad6561fab",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "demons/Nyth \"El Aliento Blanco\".md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Nyth \"El Aliento Blanco\""
+            }
+          },
+          {
+            "id": "8007bc01cf0b62cc",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "demons/Xaerion \"El Primerizo\".md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Xaerion \"El Primerizo\""
+            }
+          },
+          {
+            "id": "15429f8e18e3c7d0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "demons/Xaerion \"El Primerizo\".md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Xaerion \"El Primerizo\""
+            }
+          },
+          {
+            "id": "af62704a9d5323a1",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "demons/Ilyos \"El Segador de Vidas\".md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Ilyos \"El Segador de Vidas\""
+            }
+          },
+          {
+            "id": "b2cfb8d71c927ac9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "demons/Ozym \"La Verdad Infinita\".md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Ozym \"La Verdad Infinita\""
+            }
+          },
+          {
+            "id": "4173001dadb5bc35",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "demons/Zyren \"Destello de Mediodía\".md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Zyren \"Destello de Mediodía\""
+            }
+          }
+        ],
+        "currentTab": 7
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "c5b10e153b6c0691",
+    "type": "split",
+    "children": [
+      {
+        "id": "963a26671de9a0c1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5010508e4cbfd772",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de archivos"
+            }
+          },
+          {
+            "id": "38df51638e5fab65",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Buscar"
+            }
+          },
+          {
+            "id": "71425d8bf364f2d0",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "ab0f0eff49bb7377",
+    "type": "split",
+    "children": [
+      {
+        "id": "15af7e270231ffb5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a9bd169fa59c0322",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "demons/Zyren \"Destello de Mediodía\".md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Enlaces entrantes de Zyren \"Destello de Mediodía\""
+            }
+          },
+          {
+            "id": "28fc4f8f0a46e414",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "demons/Zyren \"Destello de Mediodía\".md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Enlaces salientes de Zyren \"Destello de Mediodía\""
+            }
+          },
+          {
+            "id": "c89b4459e5a961b5",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "2340f51b612a0f86",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas las propiedades"
+            }
+          },
+          {
+            "id": "fc5585f7591b2cf7",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "demons/Zyren \"Destello de Mediodía\".md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Esquema de Zyren \"Destello de Mediodía\""
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir selector rápido": false,
+      "graph:Abrir vista gráfica": false,
+      "canvas:Crear nuevo lienzo": false,
+      "daily-notes:Abrir la nota de hoy": false,
+      "templates:Insertar plantilla": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Crear nueva base": false
+    }
+  },
+  "active": "4173001dadb5bc35",
+  "lastOpenFiles": [
+    "demons/Elyr \"Tejedor de Recuerdos\".md",
+    "demons/Ozym \"La Verdad Infinita\".md",
+    "demons/Ilyos \"El Segador de Vidas\".md",
+    "demons/Xaerion \"El Primerizo\".md",
+    "demons/Zyren \"Destello de Mediodía\".md",
+    "demons/Nyth \"El Aliento Blanco\".md",
+    "demons/Azhar \"La Última Llama\".md",
+    "world/history/lore-demonios.md",
+    "Demon.md",
+    "demons",
+    "world/history/world-overview.md",
+    "characters/el-gato.md",
+    "acts/acto-1-luxterra.md"
+  ]
+}
